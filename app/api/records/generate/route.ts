@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 학생의 평가 결과 조회 (있는 경우)
-    let evaluationResults = []
+    let evaluationResults: any[] = []
     if (responseData.student_name && responseData.class_name) {
       const { data: evalResults } = await supabase
         .from('student_evaluation_results')
