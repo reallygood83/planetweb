@@ -47,15 +47,21 @@ const CORE_VALUES = {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Behavior survey generation started')
     const supabase = await createClient()
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
+      console.log('Auth error:', authError)
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
+    console.log('User authenticated:', user.id)
+
     const body = await request.json()
+    console.log('Request body:', JSON.stringify(body, null, 2))
+    
     const { 
       selectedValues,
       observationContext,
@@ -64,6 +70,8 @@ export async function POST(request: NextRequest) {
       grade,
       semester
     } = body
+
+    console.log('Extracted values:', { selectedValues, grade, semester })
 
     if (!selectedValues || selectedValues.length === 0) {
       return NextResponse.json(
@@ -165,6 +173,10 @@ ${selectedValueDetails.map(value => `
 - 응답은 반드시 유효한 JSON 형식이어야 함
 `
 
+    console.log('Calling Gemini API...')
+    console.log('API Key length:', apiKey.length)
+    console.log('Prompt length:', prompt.length)
+
     const geminiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
       {
@@ -192,18 +204,22 @@ ${selectedValueDetails.map(value => `
       }
     )
 
+    console.log('Gemini response status:', geminiResponse.status)
+
     if (!geminiResponse.ok) {
       const errorData = await geminiResponse.text()
       console.error('Gemini API Error:', errorData)
       return NextResponse.json(
-        { success: false, error: 'Failed to generate behavior survey' }, 
+        { success: false, error: 'Failed to generate behavior survey', details: errorData }, 
         { status: 500 }
       )
     }
 
     const geminiData = await geminiResponse.json()
+    console.log('Gemini response received')
     
     if (!geminiData.candidates || !geminiData.candidates[0]?.content?.parts?.[0]?.text) {
+      console.error('Invalid Gemini response structure:', JSON.stringify(geminiData, null, 2))
       return NextResponse.json(
         { success: false, error: 'Invalid response from AI' }, 
         { status: 500 }
@@ -211,6 +227,7 @@ ${selectedValueDetails.map(value => `
     }
 
     const aiResponse = geminiData.candidates[0].content.parts[0].text
+    console.log('AI response length:', aiResponse.length)
 
     // JSON 파싱 시도
     try {
@@ -255,9 +272,11 @@ ${selectedValueDetails.map(value => `
 
   } catch (error) {
     console.error('API Error:', error)
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     return NextResponse.json({ 
       success: false, 
-      error: 'Internal server error' 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
 }
