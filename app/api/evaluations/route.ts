@@ -114,7 +114,44 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Error creating evaluation:', error)
-      return NextResponse.json({ error: 'Failed to create evaluation plan' }, { status: 500 })
+      console.error('Error details:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      })
+      
+      // 스키마 호환성 문제일 경우 기존 형식으로 재시도
+      if (error.code === '42703' || error.message?.includes('column')) {
+        console.log('Attempting legacy schema format...')
+        
+        const { data: legacyEvaluation, error: legacyError } = await supabase
+          .from('evaluation_plans')
+          .insert([{
+            user_id: user.id,
+            subject,
+            grade,
+            semester,
+            evaluations: [] // 기존 스키마 형식
+          }])
+          .select()
+          .single()
+          
+        if (legacyError) {
+          console.error('Legacy format also failed:', legacyError)
+          return NextResponse.json({ 
+            error: 'Failed to create evaluation plan', 
+            details: error.message 
+          }, { status: 500 })
+        }
+        
+        return NextResponse.json({ success: true, data: legacyEvaluation }, { status: 201 })
+      }
+      
+      return NextResponse.json({ 
+        error: 'Failed to create evaluation plan',
+        details: error.message 
+      }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, data: newEvaluation }, { status: 201 })

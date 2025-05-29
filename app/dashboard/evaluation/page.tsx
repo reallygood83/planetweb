@@ -61,7 +61,12 @@ export default function EvaluationPage() {
         setEvaluations([data.data, ...evaluations])
         setCreateModalOpen(false)
       } else {
+        console.error('Error creating evaluation:', data)
         setError(data.error || '평가계획 생성에 실패했습니다.')
+        if (data.details) {
+          console.error('Error details:', data.details)
+          alert(`평가계획 생성 실패: ${data.details}`)
+        }
       }
     } catch {
       setError('네트워크 오류가 발생했습니다.')
