@@ -12,6 +12,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    console.log('Survey generate request body:', body)
+    
     const { 
       subject, 
       grade, 
@@ -22,7 +24,10 @@ export async function POST(request: NextRequest) {
       evaluationCriteria
     } = body
 
+    console.log('Extracted values:', { subject, grade, unit })
+
     if (!subject || !grade || !unit) {
+      console.log('Missing required fields:', { subject: !!subject, grade: !!grade, unit: !!unit })
       return NextResponse.json(
         { success: false, error: 'subject, grade, and unit are required' }, 
         { status: 400 }
@@ -33,6 +38,7 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.GEMINI_API_KEY
 
     if (!apiKey) {
+      console.log('API key not configured')
       return NextResponse.json(
         { success: false, error: 'API key not configured' }, 
         { status: 400 }
