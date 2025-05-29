@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   CreateEvaluationDTO, 
@@ -39,8 +38,8 @@ export function CreateIndividualEvaluationModal({
     lesson: '',
     evaluation_period: '',
     achievement_standards: [{ code: '', content: '' }] as AchievementStandard[],
-    evaluation_methods: [] as string[],
-    evaluation_tools: [] as string[],
+    evaluation_methods: ['관찰평가'] as string[],
+    evaluation_tools: ['체크리스트'] as string[],
     evaluation_criteria: {
       excellent: { level: '매우잘함' as const, description: '' },
       good: { level: '잘함' as const, description: '' },
@@ -50,7 +49,7 @@ export function CreateIndividualEvaluationModal({
     weight: 100
   })
   const [loading, setLoading] = useState(false)
-  const [currentStep, setCurrentStep] = useState(0) // 0: 기본정보, 1: 성취기준, 2: 평가방법, 3: 평가기준
+  const [currentStep, setCurrentStep] = useState(0) // 0: 기본정보, 1: 성취기준, 2: 평가기준
 
   const addAchievementStandard = () => {
     setFormData(prev => ({
@@ -66,33 +65,15 @@ export function CreateIndividualEvaluationModal({
     }))
   }
 
-  const toggleMethod = (method: string) => {
-    setFormData(prev => ({
-      ...prev,
-      evaluation_methods: prev.evaluation_methods.includes(method)
-        ? prev.evaluation_methods.filter(m => m !== method)
-        : [...prev.evaluation_methods, method]
-    }))
-  }
-
-  const toggleTool = (tool: string) => {
-    setFormData(prev => ({
-      ...prev,
-      evaluation_tools: prev.evaluation_tools.includes(tool)
-        ? prev.evaluation_tools.filter(t => t !== tool)
-        : [...prev.evaluation_tools, tool]
-    }))
-  }
 
   const canProceed = () => {
     switch (currentStep) {
       case 0:
         return formData.evaluation_name && formData.unit
       case 1:
-        return formData.achievement_standards.some(std => std.code && std.content)
+        // 성취기준은 내용만 있으면 됨 (코드는 선택)
+        return formData.achievement_standards.some(std => std.content.trim())
       case 2:
-        return formData.evaluation_methods.length > 0 && formData.evaluation_tools.length > 0
-      case 3:
         return Object.values(formData.evaluation_criteria).every(criteria => criteria.description.trim())
       default:
         return false
@@ -164,7 +145,7 @@ export function CreateIndividualEvaluationModal({
         {/* Progress Steps */}
         <div className="px-6 pb-4">
           <div className="flex items-center justify-center">
-            {['기본정보', '성취기준', '평가방법', '평가기준'].map((step, index) => (
+            {['기본정보', '성취기준', '평가기준'].map((step, index) => (
               <div key={step} className="flex items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                   index <= currentStep ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
@@ -174,7 +155,7 @@ export function CreateIndividualEvaluationModal({
                 <span className={`ml-2 text-sm ${index <= currentStep ? 'text-blue-600' : 'text-gray-500'}`}>
                   {step}
                 </span>
-                {index < 3 && <div className="w-8 h-px bg-gray-300 mx-4" />}
+                {index < 2 && <div className="w-8 h-px bg-gray-300 mx-4" />}
               </div>
             ))}
           </div>
@@ -247,6 +228,36 @@ export function CreateIndividualEvaluationModal({
                     />
                   </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  {/* 평가방법 */}
+                  <div className="space-y-2">
+                    <Label>평가방법</Label>
+                    <select
+                      value={formData.evaluation_methods[0] || ''}
+                      onChange={(e) => setFormData({ ...formData, evaluation_methods: e.target.value ? [e.target.value] : [] })}
+                      className="w-full px-3 py-2 border rounded-md"
+                    >
+                      {EVALUATION_METHODS.map(method => (
+                        <option key={method} value={method}>{method}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 평가도구 */}
+                  <div className="space-y-2">
+                    <Label>평가도구</Label>
+                    <select
+                      value={formData.evaluation_tools[0] || ''}
+                      onChange={(e) => setFormData({ ...formData, evaluation_tools: e.target.value ? [e.target.value] : [] })}
+                      className="w-full px-3 py-2 border rounded-md"
+                    >
+                      {EVALUATION_TOOLS.map(tool => (
+                        <option key={tool} value={tool}>{tool}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -254,7 +265,10 @@ export function CreateIndividualEvaluationModal({
             {currentStep === 1 && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label>성취기준 *</Label>
+                  <div>
+                    <Label>성취기준 *</Label>
+                    <p className="text-xs text-gray-500 mt-1">성취기준 번호는 선택사항입니다</p>
+                  </div>
                   <Button type="button" onClick={addAchievementStandard} size="sm" variant="outline">
                     <Plus className="h-4 w-4 mr-1" />
                     추가
@@ -264,17 +278,17 @@ export function CreateIndividualEvaluationModal({
                 {formData.achievement_standards.map((standard, index) => (
                   <div key={index} className="flex gap-2 items-start">
                     <Input
-                      placeholder="[6수03-01]"
+                      placeholder="[6수03-01] (선택)"
                       value={standard.code}
                       onChange={(e) => {
                         const newStandards = [...formData.achievement_standards]
                         newStandards[index].code = e.target.value
                         setFormData({ ...formData, achievement_standards: newStandards })
                       }}
-                      className="w-32"
+                      className="w-40"
                     />
                     <Textarea
-                      placeholder="성취기준 내용을 입력하세요"
+                      placeholder="성취기준 내용 *"
                       value={standard.content}
                       onChange={(e) => {
                         const newStandards = [...formData.achievement_standards]
@@ -283,6 +297,7 @@ export function CreateIndividualEvaluationModal({
                       }}
                       className="flex-1"
                       rows={2}
+                      required
                     />
                     {formData.achievement_standards.length > 1 && (
                       <Button
@@ -299,47 +314,8 @@ export function CreateIndividualEvaluationModal({
               </div>
             )}
 
-            {/* Step 2: 평가방법 */}
+            {/* Step 2: 평가기준 */}
             {currentStep === 2 && (
-              <div className="space-y-6">
-                {/* 평가방법 */}
-                <div className="space-y-3">
-                  <Label>평가방법 * (복수 선택 가능)</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {EVALUATION_METHODS.map(method => (
-                      <Badge
-                        key={method}
-                        variant={formData.evaluation_methods.includes(method) ? 'default' : 'outline'}
-                        className="cursor-pointer"
-                        onClick={() => toggleMethod(method)}
-                      >
-                        {method}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 평가도구 */}
-                <div className="space-y-3">
-                  <Label>평가도구 * (복수 선택 가능)</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {EVALUATION_TOOLS.map(tool => (
-                      <Badge
-                        key={tool}
-                        variant={formData.evaluation_tools.includes(tool) ? 'default' : 'outline'}
-                        className="cursor-pointer"
-                        onClick={() => toggleTool(tool)}
-                      >
-                        {tool}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: 평가기준 */}
-            {currentStep === 3 && (
               <div className="space-y-6">
                 <div className="bg-amber-50 p-4 rounded-lg">
                   <p className="text-sm text-amber-800">
@@ -390,7 +366,7 @@ export function CreateIndividualEvaluationModal({
               {currentStep === 0 ? '취소' : '이전'}
             </Button>
 
-            {currentStep < 3 ? (
+            {currentStep < 2 ? (
               <Button
                 type="button"
                 onClick={() => setCurrentStep(currentStep + 1)}
