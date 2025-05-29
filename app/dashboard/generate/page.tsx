@@ -22,6 +22,12 @@ export default function GeneratePage() {
   const [generatedSurvey, setGeneratedSurvey] = useState<any>(null)
 
   const handleGenerate = async () => {
+    // 필수 필드 검증
+    if (!subject || !grade || !unit) {
+      alert('교과목, 학년, 단원은 필수 입력 사항입니다.')
+      return
+    }
+
     console.log('Generating survey with data:', {
       subject,
       grade,
@@ -157,7 +163,9 @@ export default function GeneratePage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="subject">교과목</Label>
+                <Label htmlFor="subject">
+                  교과목 <Badge variant="destructive" className="text-xs ml-1">필수</Badge>
+                </Label>
                 <input
                   id="subject"
                   type="text"
@@ -168,7 +176,9 @@ export default function GeneratePage() {
                 />
               </div>
               <div>
-                <Label htmlFor="grade">학년</Label>
+                <Label htmlFor="grade">
+                  학년 <Badge variant="destructive" className="text-xs ml-1">필수</Badge>
+                </Label>
                 <select
                   id="grade"
                   value={grade}
@@ -201,7 +211,9 @@ export default function GeneratePage() {
                 </select>
               </div>
               <div>
-                <Label htmlFor="unit">단원</Label>
+                <Label htmlFor="unit">
+                  단원 <Badge variant="destructive" className="text-xs ml-1">필수</Badge>
+                </Label>
                 <input
                   id="unit"
                   type="text"
