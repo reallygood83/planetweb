@@ -2,49 +2,83 @@ import Link from 'next/link'
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col">
-      {/* Hero Section */}
-      <section className="flex-1 flex items-center justify-center bg-gradient-to-b from-blue-50 to-white px-6">
-        <div className="max-w-6xl mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-            생기부 AI 도우미
-          </h1>
-          <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            AI를 활용하여 초등학교 생활기록부 작성을 도와드립니다.
-            <br />
-            개인 API 키로 안전하고 경제적으로 사용하세요.
-          </p>
-          <div className="flex gap-4 justify-center mb-12">
-            <Link href="/auth/login">
-              <button className="bg-blue-500 text-white text-lg px-8 py-3 rounded-lg hover:bg-blue-600 transition">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      {/* Navigation */}
+      <nav className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex-shrink-0">
+              <h1 className="text-2xl font-bold text-slate-900">생기부 AI 도우미</h1>
+            </div>
+            <div className="flex gap-4">
+              <Link href="/auth/login" className="text-slate-600 hover:text-slate-900 font-medium">
+                로그인
+              </Link>
+              <Link href="/auth/register" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">
                 시작하기
-              </button>
-            </Link>
-            <Link href="#features">
-              <button className="border border-gray-300 text-gray-700 text-lg px-8 py-3 rounded-lg hover:bg-gray-50 transition">
-                기능 알아보기
-              </button>
-            </Link>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="pt-20 pb-32 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight">
+              AI로 작성하는
+              <span className="block text-blue-600">초등학교 생활기록부</span>
+            </h1>
+            <p className="mt-6 max-w-2xl mx-auto text-xl text-slate-600">
+              개인 API 키로 안전하고 경제적으로 사용하세요.
+              NEIS 규정을 완벽하게 준수하는 AI 작성 도우미입니다.
+            </p>
+            <div className="mt-10 flex gap-4 justify-center">
+              <Link href="/auth/register" className="bg-blue-600 text-white text-lg px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg hover:shadow-xl">
+                무료로 시작하기
+              </Link>
+              <Link href="#features" className="bg-white text-slate-700 text-lg px-8 py-3 rounded-lg hover:bg-slate-50 transition-colors font-medium border border-slate-300">
+                더 알아보기
+              </Link>
+            </div>
           </div>
 
-          {/* Key Features Summary */}
-          <div className="grid md:grid-cols-3 gap-6 text-left max-w-4xl mx-auto">
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
-              <h3 className="font-semibold text-lg mb-2">🔐 개인 API 키 사용</h3>
-              <p className="text-gray-600">
-                사용자 개인의 Gemini API 키로 비용 부담 없이 사용
+          {/* Feature Cards */}
+          <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">개인 API 키 사용</h3>
+              <p className="text-slate-600">
+                사용자 개인의 Gemini API 키로 비용 부담 없이 안전하게 사용하세요.
               </p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
-              <h3 className="font-semibold text-lg mb-2">📝 NEIS 규정 준수</h3>
-              <p className="text-gray-600">
-                500자 제한, 명사형 종결어미 등 규정 자동 검증
+
+            <div className="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">NEIS 규정 준수</h3>
+              <p className="text-slate-600">
+                500자 제한, 명사형 종결어미 등 NEIS 규정을 자동으로 검증합니다.
               </p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
-              <h3 className="font-semibold text-lg mb-2">👥 교사 협업 지원</h3>
-              <p className="text-gray-600">
-                학교 코드로 평가계획과 자료를 공유
+
+            <div className="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">교사 협업 지원</h3>
+              <p className="text-slate-600">
+                학교 코드로 평가계획과 자료를 동료 교사들과 공유할 수 있습니다.
               </p>
             </div>
           </div>
@@ -52,149 +86,137 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-            주요 기능
-          </h2>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="text-3xl mb-4">📋</div>
-              <h3 className="text-xl font-semibold mb-2">평가계획 관리</h3>
-              <p className="text-gray-600">
-                기존 평가계획서를 붙여넣기하면 AI가 자동으로 분석하고 구조화합니다.
-              </p>
-            </div>
+      <section id="features" className="py-20 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
+              강력한 기능들
+            </h2>
+            <p className="mt-4 text-xl text-slate-600">
+              생활기록부 작성을 쉽고 효율적으로 만들어주는 다양한 기능
+            </p>
+          </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="text-3xl mb-4">🤖</div>
-              <h3 className="text-xl font-semibold mb-2">AI 콘텐츠 생성</h3>
-              <p className="text-gray-600">
-                교과학습발달상황, 창의적체험활동, 행동특성 등을 AI가 작성합니다.
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="text-3xl mb-4">👨‍👩‍👧‍👦</div>
-              <h3 className="text-xl font-semibold mb-2">학급 관리</h3>
-              <p className="text-gray-600">
-                학급별 학생 명단을 관리하고 CSV 파일로 일괄 등록할 수 있습니다.
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="text-3xl mb-4">📊</div>
-              <h3 className="text-xl font-semibold mb-2">설문 시스템</h3>
-              <p className="text-gray-600">
-                학생 자기평가 설문을 AI로 생성하고 응답을 자동으로 수집합니다.
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="text-3xl mb-4">⚡</div>
-              <h3 className="text-xl font-semibold mb-2">일괄 생성</h3>
-              <p className="text-gray-600">
-                한 학급 전체의 생기부를 한 번에 생성하고 다양한 형식으로 내보냅니다.
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="text-3xl mb-4">🏫</div>
-              <h3 className="text-xl font-semibold mb-2">학교 코드</h3>
-              <p className="text-gray-600">
-                6자리 코드로 교사 그룹을 만들고 평가계획을 공유합니다.
-              </p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                icon: "📋",
+                title: "평가계획 관리",
+                description: "기존 평가계획서를 붙여넣기하면 AI가 자동으로 분석하고 구조화합니다."
+              },
+              {
+                icon: "🤖",
+                title: "AI 콘텐츠 생성",
+                description: "교과학습발달상황, 창의적체험활동, 행동특성 등을 AI가 작성합니다."
+              },
+              {
+                icon: "👨‍👩‍👧‍👦",
+                title: "학급 관리",
+                description: "학급별 학생 명단을 관리하고 CSV 파일로 일괄 등록할 수 있습니다."
+              },
+              {
+                icon: "📊",
+                title: "설문 시스템",
+                description: "학생 자기평가 설문을 AI로 생성하고 응답을 자동으로 수집합니다."
+              },
+              {
+                icon: "⚡",
+                title: "일괄 생성",
+                description: "한 학급 전체의 생기부를 한 번에 생성하고 다양한 형식으로 내보냅니다."
+              },
+              {
+                icon: "🏫",
+                title: "학교 코드",
+                description: "6자리 코드로 교사 그룹을 만들고 평가계획을 공유합니다."
+              }
+            ].map((feature, index) => (
+              <div key={index} className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl mb-4">{feature.icon}</div>
+                <h3 className="text-xl font-semibold text-slate-900 mb-2">{feature.title}</h3>
+                <p className="text-slate-600">{feature.description}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* How it Works */}
       <section className="py-20 bg-white">
-        <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-            사용 방법
-          </h2>
-          
-          <div className="space-y-8">
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">
-                1
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-2">회원가입 및 로그인</h3>
-                <p className="text-gray-600">
-                  Google 계정으로 간편하게 시작하세요.
-                </p>
-              </div>
-            </div>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
+              간단한 사용 방법
+            </h2>
+          </div>
 
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">
-                2
+          <div className="space-y-12">
+            {[
+              {
+                step: "1",
+                title: "회원가입 및 로그인",
+                description: "Google 계정으로 간편하게 시작하세요."
+              },
+              {
+                step: "2",
+                title: "Gemini API 키 설정",
+                description: "Google AI Studio에서 무료 API 키를 발급받아 입력하세요."
+              },
+              {
+                step: "3",
+                title: "평가계획 및 학급 설정",
+                description: "평가계획을 등록하고 학급 정보를 입력합니다."
+              },
+              {
+                step: "4",
+                title: "AI로 생기부 작성",
+                description: "학생별 관찰 내용을 입력하면 AI가 생기부를 작성합니다."
+              }
+            ].map((item, index) => (
+              <div key={index} className="flex gap-6">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-lg">
+                    {item.step}
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold text-slate-900 mb-2">{item.title}</h3>
+                  <p className="text-slate-600">{item.description}</p>
+                  {item.step === "2" && (
+                    <Link href="https://makersuite.google.com/app/apikey" target="_blank" className="inline-flex items-center text-blue-600 hover:text-blue-700 mt-2">
+                      API 키 발급하기
+                      <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </Link>
+                  )}
+                </div>
               </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-2">Gemini API 키 설정</h3>
-                <p className="text-gray-600">
-                  Google AI Studio에서 무료 API 키를 발급받아 입력하세요.
-                  <Link href="https://makersuite.google.com/app/apikey" target="_blank" className="text-blue-500 hover:underline ml-1">
-                    API 키 발급하기 →
-                  </Link>
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">
-                3
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-2">평가계획 및 학급 설정</h3>
-                <p className="text-gray-600">
-                  평가계획을 등록하고 학급 정보를 입력합니다.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">
-                4
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-2">AI로 생기부 작성</h3>
-                <p className="text-gray-600">
-                  학생별 관찰 내용을 입력하면 AI가 생기부를 작성합니다.
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-blue-50">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+      <section className="py-20 bg-blue-600">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
             지금 바로 시작하세요
           </h2>
-          <p className="text-xl text-gray-600 mb-8">
+          <p className="text-xl text-blue-100 mb-8">
             개인 API 키로 비용 걱정 없이 생기부 작성을 시작하세요.
           </p>
-          <Link href="/auth/register">
-            <button className="bg-blue-500 text-white text-lg px-8 py-3 rounded-lg hover:bg-blue-600 transition">
-              무료로 시작하기
-            </button>
+          <Link href="/auth/register" className="inline-block bg-white text-blue-600 text-lg px-8 py-3 rounded-lg hover:bg-blue-50 transition-colors font-medium shadow-lg">
+            무료로 시작하기
           </Link>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-8 bg-gray-900 text-gray-400">
-        <div className="max-w-6xl mx-auto px-6 text-center">
+      <footer className="py-8 bg-slate-900 text-slate-400">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p>&copy; 2024 생기부 AI 도우미. All rights reserved.</p>
         </div>
       </footer>
-    </main>
+    </div>
   )
 }
