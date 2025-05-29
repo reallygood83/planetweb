@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { generateUniqueCode, validateCode } from '@/lib/code-generator'
+import { generateUniqueCode } from '@/lib/code-generator'
 
 // GET: 사용자가 참여한 학교 코드 목록 조회
 export async function GET() {

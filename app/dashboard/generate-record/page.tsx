@@ -130,7 +130,7 @@ export default function GenerateRecordPage() {
     }
   }
 
-  const fetchEvaluationResults = async (studentName: string, evaluationPlanId?: string) => {
+  const fetchEvaluationResults = useCallback(async (studentName: string, evaluationPlanId?: string) => {
     if (!selectedClass || !studentName) return
 
     try {
@@ -150,7 +150,7 @@ export default function GenerateRecordPage() {
       console.error('Error fetching evaluation results:', error)
       setEvaluationResults([])
     }
-  }
+  }, [selectedClass])
 
   const fetchStudentResponses = useCallback(async () => {
     if (!selectedStudent || !selectedClass) return

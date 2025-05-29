@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
-import { User } from '@supabase/supabase-js'
+import { User, AuthChangeEvent, Session } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -23,6 +23,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
 
   useEffect(() => {
+    // Check if Supabase is configured
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
+
     // Check active sessions and sets the user
     const getInitialSession = async () => {
       const { data: { session }, error } = await supabase.auth.getSession()
@@ -38,7 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for changes on auth state (sign in, sign out, etc.)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
       console.log('Auth state changed:', event, session?.user?.email)
       setUser(session?.user ?? null)
       
@@ -53,6 +59,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabase])
 
   const signIn = async (email: string, password: string) => {
+    if (!supabase) throw new Error('Supabase not configured')
+    
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -63,6 +71,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signUp = async (email: string, password: string, name?: string) => {
+    if (!supabase) throw new Error('Supabase not configured')
+    
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -78,12 +88,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
+    if (!supabase) throw new Error('Supabase not configured')
+    
     const { error } = await supabase.auth.signOut()
     if (error) throw error
     router.push('/')
   }
 
   const signInWithGoogle = async () => {
+    if (!supabase) throw new Error('Supabase not configured')
+    
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
