@@ -17,7 +17,8 @@ export async function POST(request: NextRequest) {
       recordType = '교과학습발달상황',
       subject = '',
       teacherNotes = '',
-      additionalContext = ''
+      additionalContext = '',
+      evaluationResults = []
     } = body
 
     // 필수 항목 검증
@@ -50,7 +51,8 @@ export async function POST(request: NextRequest) {
       subject,
       teacherNotes,
       additionalContext,
-      className
+      className,
+      evaluationResults
     })
 
     // Gemini API 호출
@@ -126,7 +128,30 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function createSimplePrompt({ recordType, subject, teacherNotes, additionalContext, className }: any) {
+function createSimplePrompt({ recordType, subject, teacherNotes, additionalContext, className, evaluationResults }: any) {
+  // 평가 결과 요약
+  let evaluationSummary = ''
+  if (evaluationResults && evaluationResults.length > 0) {
+    const excellentCount = evaluationResults.filter((r: any) => r.result === '매우잘함').length
+    const goodCount = evaluationResults.filter((r: any) => r.result === '잘함').length
+    const averageCount = evaluationResults.filter((r: any) => r.result === '보통').length
+    const needsImprovementCount = evaluationResults.filter((r: any) => r.result === '노력요함').length
+    
+    evaluationSummary = `
+**평가 결과 요약:**
+- 매우잘함: ${excellentCount}개
+- 잘함: ${goodCount}개
+- 보통: ${averageCount}개
+- 노력요함: ${needsImprovementCount}개
+
+**주요 성취 내용:**
+${evaluationResults
+  .filter((r: any) => r.result === '매우잘함' || r.result === '잘함')
+  .map((r: any) => `- ${r.evaluation_name}: ${r.result_criteria}`)
+  .join('\n')}
+`
+  }
+
   const basePrompt = `초등학교 생활기록부 "${recordType}" 항목을 작성해주세요.
 
 **중요한 작성 규칙:**
@@ -135,11 +160,14 @@ function createSimplePrompt({ recordType, subject, teacherNotes, additionalConte
 3. 500자 이내로 작성하세요
 4. '뛰어난', '탁월한', '우수한', '최고의', '완벽한', '훌륭한' 등의 과도한 표현을 피하세요
 5. 구체적이고 객관적인 관찰 내용을 포함하세요
+${evaluationResults && evaluationResults.length > 0 ? '6. 평가 결과를 참고하여 학생의 성취 수준을 적절히 반영하세요' : ''}
 
 **기본 정보:**
 - 작성 항목: ${recordType}
 ${subject ? `- 과목: ${subject}` : ''}
 ${className ? `- 학급: ${className}` : ''}
+
+${evaluationSummary}
 
 **교사 관찰 기록:**
 ${teacherNotes}
@@ -147,8 +175,9 @@ ${teacherNotes}
 ${additionalContext ? `**추가 맥락:**\n${additionalContext}` : ''}
 
 위 정보를 바탕으로 ${recordType}을 작성해주세요. 
+${evaluationResults && evaluationResults.length > 0 ? '평가 결과와 교사 관찰 내용을 종합하여, 학생의 성취와 성장을 구체적으로 서술하세요.' : ''}
 반드시 명사형 종결어미로 끝나는 완성된 문장으로 작성하고, 학생 이름은 절대 포함하지 마세요.`
-
+  
   return basePrompt
 }
 
