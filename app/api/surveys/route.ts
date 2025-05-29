@@ -21,7 +21,8 @@ export async function GET() {
           id,
           subject,
           grade,
-          semester
+          semester,
+          unit
         )
       `)
       .eq('user_id', user.id)
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, evaluation_plan_id, questions, is_active = true } = body
+    const { title, description, evaluation_plan_id, evaluation_plan, questions, is_active = true } = body
 
     // 필수 필드 검증
     if (!title || !questions) {
@@ -61,13 +62,42 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    let finalEvaluationPlanId = evaluation_plan_id
+
+    // evaluation_plan 객체가 전달된 경우, 먼저 저장
+    if (evaluation_plan && !evaluation_plan_id) {
+      const { data: newEvaluationPlan, error: planError } = await supabase
+        .from('evaluation_plans')
+        .insert([{
+          user_id: user.id,
+          subject: evaluation_plan.subject,
+          grade: evaluation_plan.grade,
+          semester: evaluation_plan.semester || null,
+          unit: evaluation_plan.unit,
+          lesson: evaluation_plan.lesson || null,
+          learning_objectives: evaluation_plan.learningObjectives ? [evaluation_plan.learningObjectives] : [],
+          achievement_standards: evaluation_plan.achievementStandards ? [evaluation_plan.achievementStandards] : [],
+          evaluation_criteria: evaluation_plan.evaluationCriteria || null
+        }])
+        .select()
+        .single()
+
+      if (planError) {
+        console.error('Error creating evaluation plan:', planError)
+        return NextResponse.json({ error: 'Failed to create evaluation plan' }, { status: 500 })
+      }
+
+      finalEvaluationPlanId = newEvaluationPlan.id
+    }
+
     // 새 설문 생성
     const { data: newSurvey, error } = await supabase
       .from('surveys')
       .insert([{
         user_id: user.id,
         title,
-        evaluation_plan_id: evaluation_plan_id || null,
+        description: description || null,
+        evaluation_plan_id: finalEvaluationPlanId || null,
         questions,
         is_active
       }])
@@ -77,7 +107,8 @@ export async function POST(request: NextRequest) {
           id,
           subject,
           grade,
-          semester
+          semester,
+          unit
         )
       `)
       .single()

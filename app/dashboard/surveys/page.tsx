@@ -20,7 +20,7 @@ import {
 interface Survey {
   id: string
   title: string
-  description: string
+  description?: string
   questions: {
     multipleChoice: Array<{
       question: string
@@ -31,7 +31,8 @@ interface Survey {
     }>
   }
   created_at: string
-  evaluation_plans: {
+  evaluation_plans?: {
+    id: string
     subject: string
     grade: string
     semester: string
@@ -239,22 +240,28 @@ export default function SurveysPage() {
                       <BookOpen className="h-5 w-5 text-blue-600" />
                       {survey.title}
                     </CardTitle>
-                    <CardDescription className="mb-3">
-                      {survey.description}
-                    </CardDescription>
+                    {survey.description && (
+                      <CardDescription className="mb-3">
+                        {survey.description}
+                      </CardDescription>
+                    )}
                     <div className="flex flex-wrap gap-2">
-                      <Badge variant="secondary">
-                        {survey.evaluation_plans.subject}
-                      </Badge>
-                      <Badge variant="outline">
-                        {survey.evaluation_plans.grade}
-                      </Badge>
-                      <Badge variant="outline">
-                        {survey.evaluation_plans.semester}
-                      </Badge>
-                      <Badge variant="outline">
-                        {survey.evaluation_plans.unit}
-                      </Badge>
+                      {survey.evaluation_plans && (
+                        <>
+                          <Badge variant="secondary">
+                            {survey.evaluation_plans.subject}
+                          </Badge>
+                          <Badge variant="outline">
+                            {survey.evaluation_plans.grade}
+                          </Badge>
+                          <Badge variant="outline">
+                            {survey.evaluation_plans.semester}
+                          </Badge>
+                          <Badge variant="outline">
+                            {survey.evaluation_plans.unit}
+                          </Badge>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -329,7 +336,9 @@ export default function SurveysPage() {
                   ✕
                 </Button>
               </div>
-              <p className="text-gray-600 mt-2">{selectedSurvey.description}</p>
+              {selectedSurvey.description && (
+                <p className="text-gray-600 mt-2">{selectedSurvey.description}</p>
+              )}
             </div>
             
             <div className="p-6 max-h-[60vh] overflow-y-auto">
