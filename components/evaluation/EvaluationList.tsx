@@ -3,15 +3,16 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { EvaluationPlan } from '@/lib/types/evaluation'
-import { Trash2, Calendar, BookOpen, Sparkles, Target, Award } from 'lucide-react'
+import { Trash2, Calendar, BookOpen, Sparkles, Target, Award, Edit } from 'lucide-react'
 
 interface EvaluationListProps {
   evaluations: EvaluationPlan[]
   onDelete: (evaluationId: string) => void
+  onEdit?: (evaluation: EvaluationPlan) => void
   onGenerateSurvey?: (evaluation: EvaluationPlan) => void
 }
 
-export function EvaluationList({ evaluations, onDelete, onGenerateSurvey }: EvaluationListProps) {
+export function EvaluationList({ evaluations, onDelete, onEdit, onGenerateSurvey }: EvaluationListProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ko-KR')
   }
@@ -37,14 +38,26 @@ export function EvaluationList({ evaluations, onDelete, onGenerateSurvey }: Eval
                   </span>
                 </CardDescription>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => evaluation.id && onDelete(evaluation.id)}
-                className="text-red-600 hover:text-red-700"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-1">
+                {onEdit && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onEdit(evaluation)}
+                    className="text-gray-600 hover:text-gray-700"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => evaluation.id && onDelete(evaluation.id)}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </CardHeader>
           

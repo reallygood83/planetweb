@@ -53,7 +53,14 @@ export async function PUT(
 
     const { id } = await params
     const body = await request.json()
-    const { subject, grade, semester, evaluations } = body
+
+    // 단원명은 필수, 차시는 선택
+    if (!body.unit || !body.unit.trim()) {
+      return NextResponse.json(
+        { success: false, error: '단원명은 필수 항목입니다.' },
+        { status: 400 }
+      )
+    }
 
     // 평가계획 존재 확인
     const { data: existingEvaluation, error: fetchError } = await supabase
@@ -64,35 +71,24 @@ export async function PUT(
       .single()
 
     if (fetchError || !existingEvaluation) {
-      return NextResponse.json({ error: 'Evaluation plan not found' }, { status: 404 })
-    }
-
-    // 중복 확인 (자신 제외)
-    if (subject && grade && semester) {
-      const { data: duplicatePlan } = await supabase
-        .from('evaluation_plans')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('subject', subject)
-        .eq('grade', grade)
-        .eq('semester', semester)
-        .neq('id', id)
-        .single()
-
-      if (duplicatePlan) {
-        return NextResponse.json(
-          { error: 'Evaluation plan already exists for this subject, grade, and semester' }, 
-          { status: 409 }
-        )
-      }
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Evaluation plan not found' 
+      }, { status: 404 })
     }
 
     // 평가계획 업데이트
-    const updateData: any = { updated_at: new Date().toISOString() }
-    if (subject !== undefined) updateData.subject = subject
-    if (grade !== undefined) updateData.grade = grade
-    if (semester !== undefined) updateData.semester = semester
-    if (evaluations !== undefined) updateData.evaluations = evaluations
+    const updateData = {
+      subject: body.subject?.trim() || null,
+      grade: body.grade?.trim() || null,
+      semester: body.semester?.trim() || null,
+      unit: body.unit.trim(),
+      period: body.period?.trim() || null, // 선택사항
+      learning_objectives: body.learning_objectives?.trim() || null,
+      achievement_standards: body.achievement_standards?.trim() || null,
+      evaluation_criteria: body.evaluation_criteria?.trim() || null,
+      updated_at: new Date().toISOString()
+    }
 
     const { data: updatedEvaluation, error } = await supabase
       .from('evaluation_plans')
@@ -104,10 +100,17 @@ export async function PUT(
 
     if (error) {
       console.error('Error updating evaluation:', error)
-      return NextResponse.json({ error: 'Failed to update evaluation plan' }, { status: 500 })
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Failed to update evaluation plan' 
+      }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, data: updatedEvaluation })
+    return NextResponse.json({ 
+      success: true, 
+      data: updatedEvaluation,
+      message: '평가계획이 성공적으로 수정되었습니다.'
+    })
   } catch (error) {
     console.error('API Error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

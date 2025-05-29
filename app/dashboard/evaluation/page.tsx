@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/auth-context'
 import { EvaluationList } from '@/components/evaluation/EvaluationList'
 import { CreateEvaluationModal } from '@/components/evaluation/CreateEvaluationModal'
+import { EditEvaluationModal } from '@/components/evaluation/EditEvaluationModal'
 import { SmartPasteModal } from '@/components/evaluation/SmartPasteModal'
 import { GenerateSurveyModal } from '@/components/evaluation/GenerateSurveyModal'
 import { EvaluationPlan } from '@/lib/types/evaluation'
@@ -17,6 +18,7 @@ export default function EvaluationPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
   const [smartPasteOpen, setSmartPasteOpen] = useState(false)
   const [surveyModalOpen, setSurveyModalOpen] = useState(false)
   const [selectedEvaluation, setSelectedEvaluation] = useState<EvaluationPlan | null>(null)
@@ -76,6 +78,43 @@ export default function EvaluationPage() {
   const handleSmartPasteSuccess = (analyzedData: EvaluationPlan) => {
     setEvaluations([analyzedData, ...evaluations])
     setSmartPasteOpen(false)
+  }
+
+  const handleEditEvaluation = (evaluation: EvaluationPlan) => {
+    setSelectedEvaluation(evaluation)
+    setEditModalOpen(true)
+  }
+
+  const handleUpdateEvaluation = async (evaluationData: Partial<EvaluationPlan>) => {
+    if (!evaluationData.id) return
+
+    try {
+      const response = await fetch(`/api/evaluations/${evaluationData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(evaluationData),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        // 목록에서 해당 평가계획 업데이트
+        setEvaluations(prev => 
+          prev.map(evaluation => 
+            evaluation.id === evaluationData.id ? { ...evaluation, ...data.data } : evaluation
+          )
+        )
+        setEditModalOpen(false)
+        setSelectedEvaluation(null)
+      } else {
+        throw new Error(data.error || '평가계획 수정에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('Error updating evaluation:', error)
+      throw error
+    }
   }
 
   const handleGenerateSurvey = (evaluation: EvaluationPlan) => {
@@ -189,6 +228,7 @@ export default function EvaluationPage() {
         <EvaluationList
           evaluations={evaluations}
           onDelete={handleDeleteEvaluation}
+          onEdit={handleEditEvaluation}
           onGenerateSurvey={handleGenerateSurvey}
         />
       )}
@@ -197,6 +237,13 @@ export default function EvaluationPage() {
         open={createModalOpen}
         onOpenChange={setCreateModalOpen}
         onSubmit={handleCreateEvaluation}
+      />
+
+      <EditEvaluationModal
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        evaluation={selectedEvaluation}
+        onSave={handleUpdateEvaluation}
       />
 
       <SmartPasteModal
