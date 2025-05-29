@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { CodeDisplay } from '@/components/ui/code-display'
+import { SimpleCodeDisplay } from '@/components/ui/simple-code-display'
 import { Class } from '@/types'
 import { Pencil, Trash2, Users } from 'lucide-react'
 
@@ -10,10 +10,9 @@ interface ClassListProps {
   classes: Class[]
   onEdit: (classData: Class) => void
   onDelete: (classId: string) => void
-  onCodeUpdated?: (classId: string, newCode: string) => void
 }
 
-export function ClassList({ classes, onEdit, onDelete, onCodeUpdated }: ClassListProps) {
+export function ClassList({ classes, onEdit, onDelete }: ClassListProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ko-KR')
   }
@@ -58,11 +57,9 @@ export function ClassList({ classes, onEdit, onDelete, onCodeUpdated }: ClassLis
                   <span>학생 {classData.students?.length || 0}명</span>
                 </div>
                 {classData.school_code ? (
-                  <CodeDisplay
+                  <SimpleCodeDisplay
                     code={classData.school_code}
                     codeType="CLASS"
-                    recordId={classData.id}
-                    onCodeUpdated={(newCode) => onCodeUpdated?.(classData.id, newCode)}
                     className="py-2"
                   />
                 ) : (

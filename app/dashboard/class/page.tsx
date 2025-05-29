@@ -183,11 +183,6 @@ export default function ClassPage() {
           classes={classes}
           onEdit={openEditModal}
           onDelete={handleDeleteClass}
-          onCodeUpdated={(classId, newCode) => {
-            setClasses(classes.map(c => 
-              c.id === classId ? { ...c, school_code: newCode } : c
-            ))
-          }}
         />
       )}
 
