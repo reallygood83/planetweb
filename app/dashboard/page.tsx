@@ -32,15 +32,21 @@ export default function DashboardPage() {
       const classResponse = await fetch('/api/classes')
       if (classResponse.ok) {
         const classData = await classResponse.json()
-        if (classData.success) {
+        if (classData.success && Array.isArray(classData.data)) {
           const classes = classData.data
-          const studentCount = classes.reduce((total: number, cls: any) => total + cls.students.length, 0)
+          const studentCount = classes.reduce((total: number, cls: any) => {
+            return total + (Array.isArray(cls.students) ? cls.students.length : 0)
+          }, 0)
           setStats(prev => ({
             ...prev,
             classCount: classes.length,
             studentCount
           }))
+        } else {
+          setStats(prev => ({ ...prev, classCount: 0, studentCount: 0 }))
         }
+      } else {
+        setStats(prev => ({ ...prev, classCount: 0, studentCount: 0 }))
       }
     } catch (error) {
       console.error('Error fetching stats:', error)

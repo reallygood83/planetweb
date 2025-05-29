@@ -87,6 +87,7 @@ export default function GenerateRecordPage() {
   
   // Record generation
   const [recordType, setRecordType] = useState<string>('교과학습발달상황')
+  const [selectedSubject, setSelectedSubject] = useState<string>('')
   const [teacherNotes, setTeacherNotes] = useState('')
   const [additionalContext, setAdditionalContext] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -161,7 +162,7 @@ export default function GenerateRecordPage() {
           className: selectedClass.name,
           recordType,
           subject: recordType === '교과학습발달상황' ? 
-            (selectedResponse?.survey.evaluation_plans?.subject || '전과목') : undefined,
+            (selectedResponse?.survey.evaluation_plans?.subject || selectedSubject || '전과목') : undefined,
           teacherNotes,
           additionalContext
         })
@@ -458,6 +459,39 @@ export default function GenerateRecordPage() {
                   ))}
                 </div>
               </div>
+
+              {/* Subject Selection (for 교과학습발달상황) */}
+              {recordType === '교과학습발달상황' && (
+                <div className="space-y-2">
+                  <Label htmlFor="subject">과목 선택</Label>
+                  <select
+                    id="subject"
+                    value={selectedResponse?.survey.evaluation_plans?.subject || selectedSubject}
+                    onChange={(e) => {
+                      setSelectedSubject(e.target.value)
+                    }}
+                    className="w-full px-3 py-2 border rounded-md"
+                    disabled={!!selectedResponse?.survey.evaluation_plans?.subject}
+                  >
+                    <option value="">과목을 선택하세요</option>
+                    <option value="국어">국어</option>
+                    <option value="수학">수학</option>
+                    <option value="사회">사회</option>
+                    <option value="과학">과학</option>
+                    <option value="영어">영어</option>
+                    <option value="도덕">도덕</option>
+                    <option value="실과">실과</option>
+                    <option value="체육">체육</option>
+                    <option value="음악">음악</option>
+                    <option value="미술">미술</option>
+                  </select>
+                  {selectedResponse?.survey.evaluation_plans?.subject && (
+                    <p className="text-sm text-gray-500">
+                      선택된 자기평가 설문의 과목({selectedResponse.survey.evaluation_plans.subject})이 자동으로 적용됩니다.
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Teacher Notes */}
               <div className="space-y-2">
