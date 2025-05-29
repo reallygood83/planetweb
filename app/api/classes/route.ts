@@ -5,6 +5,8 @@ import { generateUniqueCode } from '@/lib/code-generator'
 // GET: 사용자의 모든 학급 조회
 export async function GET() {
   try {
+    console.log('Classes GET request started')
+    
     // Supabase 연결 확인
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
       console.log('Supabase 설정이 필요합니다')
@@ -15,9 +17,16 @@ export async function GET() {
     
     // 현재 사용자 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (authError) {
+      console.error('Auth error:', authError)
+      return NextResponse.json({ error: 'Auth error: ' + authError.message }, { status: 401 })
     }
+    if (!user) {
+      console.log('No user found')
+      return NextResponse.json({ error: 'No user found' }, { status: 401 })
+    }
+
+    console.log('User found:', user.email)
 
     // 사용자의 모든 학급 조회
     const { data: classes, error } = await supabase
@@ -28,13 +37,20 @@ export async function GET() {
 
     if (error) {
       console.error('학급 조회 실패:', error)
-      return NextResponse.json({ error: '학급 데이터를 불러올 수 없습니다.' }, { status: 500 })
+      return NextResponse.json({ 
+        error: '학급 데이터를 불러올 수 없습니다.',
+        details: error.message 
+      }, { status: 500 })
     }
 
+    console.log('Found classes:', classes?.length || 0)
     return NextResponse.json({ success: true, data: classes || [] })
   } catch (error) {
     console.error('API 오류:', error)
-    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 })
+    return NextResponse.json({ 
+      error: '서버 오류가 발생했습니다.',
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 })
   }
 }
 

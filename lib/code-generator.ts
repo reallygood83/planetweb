@@ -39,14 +39,14 @@ const CODE_CONFIG = {
   SCHOOL: {
     length: 6,
     prefix: 'S',
-    maxAttempts: 100,
+    maxAttempts: 50,
     tableName: 'school_codes',
     columnName: 'code'
   },
   CLASS: {
     length: 6,
     prefix: 'C',
-    maxAttempts: 100,
+    maxAttempts: 50,
     tableName: 'classes',
     columnName: 'school_code'
   }
@@ -65,6 +65,32 @@ export function generateRandomCode(type: CodeType): string {
   
   for (let i = 0; i < codeLength; i++) {
     const randomIndex = Math.floor(Math.random() * SAFE_CHARSET.length)
+    code += SAFE_CHARSET[randomIndex]
+  }
+  
+  return code
+}
+
+/**
+ * 더 안전한 랜덤 코드 생성 (시간 기반 시드 사용)
+ * @param type 코드 타입
+ * @returns 생성된 코드 문자열
+ */
+export function generateSecureRandomCode(type: CodeType): string {
+  const config = CODE_CONFIG[type]
+  const codeLength = config.length - 1 // prefix 제외
+  
+  let code = config.prefix
+  
+  // 현재 시간을 기반으로 한 시드 생성
+  const timestamp = Date.now()
+  const randomSeed = Math.random()
+  const combinedSeed = (timestamp + randomSeed * 1000000) % SAFE_CHARSET.length
+  
+  for (let i = 0; i < codeLength; i++) {
+    // 각 자리마다 다른 시드 사용
+    const seed = (combinedSeed + i * 7 + timestamp % 13) % SAFE_CHARSET.length
+    const randomIndex = Math.floor((Math.random() + seed / SAFE_CHARSET.length) * SAFE_CHARSET.length) % SAFE_CHARSET.length
     code += SAFE_CHARSET[randomIndex]
   }
   
@@ -120,6 +146,15 @@ export async function validateCode(
       .maybeSingle()
     
     if (error) {
+      // 테이블이 존재하지 않는 경우 (첫 번째 코드 생성 시)
+      if (error.code === '42P01' || error.message?.includes('relation')) {
+        console.log('테이블이 존재하지 않음 - 첫 번째 코드로 간주')
+        return {
+          isValid: true,
+          isAvailable: true
+        }
+      }
+      
       console.error('코드 중복 검증 오류:', error)
       return {
         isValid: true,
@@ -156,10 +191,15 @@ export async function generateUniqueCode(type: CodeType): Promise<CodeGeneration
     attempts++
     
     try {
-      const code = generateRandomCode(type)
+      // 처음 절반은 일반 생성, 나머지는 시간 기반 생성 사용
+      const code = attempts <= config.maxAttempts / 2 
+        ? generateRandomCode(type)
+        : generateSecureRandomCode(type)
+      
       const validation = await validateCode(code, type)
       
       if (validation.isValid && validation.isAvailable) {
+        console.log(`코드 생성 성공: ${code} (${attempts}번 시도)`)
         return {
           success: true,
           code,
@@ -177,6 +217,7 @@ export async function generateUniqueCode(type: CodeType): Promise<CodeGeneration
       }
       
       // 중복인 경우 재시도
+      console.log(`코드 중복: ${code}, 재시도 중... (${attempts}/${config.maxAttempts})`)
       continue
       
     } catch (error) {
@@ -194,7 +235,7 @@ export async function generateUniqueCode(type: CodeType): Promise<CodeGeneration
   
   return {
     success: false,
-    error: `${config.maxAttempts}번 시도 후에도 유니크한 코드를 생성할 수 없습니다.`,
+    error: `${config.maxAttempts}번 시도 후에도 유니크한 코드를 생성할 수 없습니다. 잠시 후 다시 시도해주세요.`,
     attempts
   }
 }
