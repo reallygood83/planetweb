@@ -29,6 +29,18 @@ export interface Student {
   name: string
 }
 
+export interface Class {
+  id: string
+  user_id: string
+  class_name: string
+  grade: string
+  semester: string
+  teacher?: string
+  students: Student[]
+  created_at: string
+  updated_at: string
+}
+
 export interface ClassInfo {
   id?: string
   className: string

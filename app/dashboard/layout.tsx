@@ -70,7 +70,7 @@ export default function DashboardLayout({
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
                 <Link href="/dashboard" className="text-xl font-bold text-gray-900">
-                  생기부 AI 도우미
+                  아이빛
                 </Link>
               </div>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
