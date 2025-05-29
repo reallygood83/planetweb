@@ -143,7 +143,7 @@ export default function GenerateRecordPage() {
   }, [selectedStudent, selectedClass, fetchStudentResponses])
 
   const handleGenerateContent = async () => {
-    if (!selectedResponse || !selectedStudent || !selectedClass) return
+    if (!selectedStudent || !selectedClass) return
 
     setIsGenerating(true)
     try {
@@ -156,12 +156,12 @@ export default function GenerateRecordPage() {
           studentName: selectedStudent.name,
           className: selectedClass.name,
           recordType,
-          responseId: selectedResponse.id,
+          responseId: selectedResponse?.id,
           teacherNotes,
           additionalContext,
-          subject: selectedResponse.survey.evaluation_plans?.subject,
-          unit: selectedResponse.survey.evaluation_plans?.unit,
-          responses: selectedResponse.responses
+          subject: selectedResponse?.survey.evaluation_plans?.subject,
+          unit: selectedResponse?.survey.evaluation_plans?.unit,
+          responses: selectedResponse?.responses
         })
       })
 
@@ -237,7 +237,7 @@ export default function GenerateRecordPage() {
     switch (step) {
       case 1: return selectedClass !== null
       case 2: return selectedStudent !== null
-      case 3: return selectedResponse !== null
+      case 3: return true // 자기평가는 선택사항
       case 4: return teacherNotes.trim() !== ''
       case 5: return generatedContent !== null
       default: return false
@@ -329,10 +329,10 @@ export default function GenerateRecordPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                3단계: 자기평가 선택 - {selectedStudent?.name}
+                3단계: 자기평가 선택 (선택) - {selectedStudent?.name}
               </CardTitle>
               <CardDescription>
-                생기부 작성에 활용할 자기평가 결과를 선택하세요.
+                생기부 작성에 활용할 자기평가 결과를 선택하세요. 자기평가 없이도 생기부 생성이 가능합니다.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -347,12 +347,40 @@ export default function GenerateRecordPage() {
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
                     제출된 평가가 없습니다
                   </h3>
-                  <p className="text-gray-500">
+                  <p className="text-gray-500 mb-4">
                     {selectedStudent?.name} 학생이 아직 자기평가를 제출하지 않았습니다.
+                  </p>
+                  <p className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
+                    💡 자기평가가 없어도 교사 관찰 기록과 평가 기준을 바탕으로 생기부를 생성할 수 있습니다.
                   </p>
                 </div>
               ) : (
                 <div className="space-y-3">
+                  {/* 선택 안함 옵션 */}
+                  <div 
+                    className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                      selectedResponse === null
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setSelectedResponse(null)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium text-gray-700">
+                          자기평가 없이 생성
+                        </h4>
+                        <p className="text-sm text-gray-500 mt-1">
+                          교사 관찰 기록과 평가 기준만으로 생기부를 생성합니다
+                        </p>
+                      </div>
+                      {selectedResponse === null && (
+                        <Check className="h-5 w-5 text-blue-600" />
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* 자기평가 목록 */}
                   {studentResponses.map((response) => (
                     <div 
                       key={response.id}
@@ -464,11 +492,17 @@ export default function GenerateRecordPage() {
                 <div className="space-y-2 text-sm">
                   <div><span className="font-medium">학생:</span> {selectedStudent?.name}</div>
                   <div><span className="font-medium">학급:</span> {selectedClass?.name}</div>
-                  <div><span className="font-medium">설문:</span> {selectedResponse?.survey.title}</div>
-                  {selectedResponse?.survey.evaluation_plans && (
-                    <div>
-                      <span className="font-medium">과목:</span> {selectedResponse.survey.evaluation_plans.subject} - {selectedResponse.survey.evaluation_plans.unit}
-                    </div>
+                  {selectedResponse ? (
+                    <>
+                      <div><span className="font-medium">설문:</span> {selectedResponse.survey.title}</div>
+                      {selectedResponse.survey.evaluation_plans && (
+                        <div>
+                          <span className="font-medium">과목:</span> {selectedResponse.survey.evaluation_plans.subject} - {selectedResponse.survey.evaluation_plans.unit}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-gray-500 italic">자기평가 미선택 (교사 관찰 기록으로만 생성)</div>
                   )}
                 </div>
               </div>

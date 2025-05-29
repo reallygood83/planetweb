@@ -250,6 +250,22 @@ export default function DashboardPage() {
               </div>
             </li>
           </ol>
+          
+          <div className="mt-6 flex gap-3">
+            <Button 
+              onClick={() => window.location.href = '/dashboard/generate-record'}
+              className="flex-1"
+            >
+              개별 생성
+            </Button>
+            <Button 
+              onClick={() => window.location.href = '/dashboard/generate-batch'}
+              variant="outline"
+              className="flex-1"
+            >
+              일괄 생성
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

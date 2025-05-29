@@ -41,6 +41,7 @@ export default function DashboardLayout({
     { name: '설문관리', href: '/dashboard/surveys' },
     { name: '학생평가현황', href: '/dashboard/student-evaluation' },
     { name: '생기부생성', href: '/dashboard/generate-record' },
+    { name: '일괄생성', href: '/dashboard/generate-batch' },
     { name: '생기부관리', href: '/dashboard/records' },
   ]
 
