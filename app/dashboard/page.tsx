@@ -35,7 +35,7 @@ export default function DashboardPage() {
         if (classData.success && Array.isArray(classData.data)) {
           const classes = classData.data
           const studentCount = classes.reduce((total: number, cls: any) => {
-            return total + (Array.isArray(cls.students) ? cls.students.length : 0)
+            return total + (cls.students && Array.isArray(cls.students) ? cls.students.length : 0)
           }, 0)
           setStats(prev => ({
             ...prev,

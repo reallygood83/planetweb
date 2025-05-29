@@ -289,8 +289,8 @@ export default function SurveysPage() {
                       {formatDate(survey.created_at)}
                     </span>
                     <span>
-                      객관식 {survey.questions.multipleChoice.length}문항 + 
-                      주관식 {survey.questions.shortAnswer.length}문항
+                      객관식 {survey.questions?.multipleChoice?.length || 0}문항 + 
+                      주관식 {survey.questions?.shortAnswer?.length || 0}문항
                     </span>
                     {survey.responses_count !== undefined && (
                       <span className="flex items-center gap-1">
@@ -359,13 +359,13 @@ export default function SurveysPage() {
             <div className="p-6 max-h-[60vh] overflow-y-auto">
               <div className="space-y-6">
                 {/* Multiple Choice Questions */}
-                {selectedSurvey.questions.multipleChoice.map((q, index) => (
+                {(selectedSurvey.questions?.multipleChoice || []).map((q, index) => (
                   <div key={`mc-${index}`} className="space-y-2">
                     <h4 className="font-medium">
                       {index + 1}. {q.question}
                     </h4>
                     <div className="space-y-1 ml-4">
-                      {q.options.map((option, optIndex) => (
+                      {(q.options || []).map((option, optIndex) => (
                         <div key={optIndex} className="flex items-center gap-2">
                           <input type="radio" disabled />
                           <span className="text-sm">{option}</span>
@@ -376,10 +376,10 @@ export default function SurveysPage() {
                 ))}
                 
                 {/* Short Answer Questions */}
-                {selectedSurvey.questions.shortAnswer.map((q, index) => (
+                {(selectedSurvey.questions?.shortAnswer || []).map((q, index) => (
                   <div key={`sa-${index}`} className="space-y-2">
                     <h4 className="font-medium">
-                      {selectedSurvey.questions.multipleChoice.length + index + 1}. {q.question}
+                      {(selectedSurvey.questions?.multipleChoice?.length || 0) + index + 1}. {q.question}
                     </h4>
                     <textarea
                       className="w-full p-2 border rounded-md resize-none"

@@ -197,7 +197,7 @@ export default function ClassPage() {
       {showGuide && createdClass && (
         <ClassCreatedGuide
           className={createdClass.class_name}
-          studentCount={createdClass.students.length}
+          studentCount={createdClass.students?.length || 0}
           onDismiss={() => setShowGuide(false)}
         />
       )}

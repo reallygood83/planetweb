@@ -52,10 +52,10 @@ export function ClassList({ classes, onEdit, onDelete }: ClassListProps) {
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Users className="h-4 w-4" />
-                <span>학생 {classData.students.length}명</span>
+                <span>학생 {classData.students?.length || 0}명</span>
               </div>
               
-              {classData.students.length > 0 && (
+              {classData.students && classData.students.length > 0 && (
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-gray-700">학생 목록:</p>
                   <div className="text-sm text-gray-600 max-h-20 overflow-y-auto">
@@ -65,9 +65,9 @@ export function ClassList({ classes, onEdit, onDelete }: ClassListProps) {
                         <span>{student.name}</span>
                       </div>
                     ))}
-                    {classData.students.length > 5 && (
+                    {classData.students && classData.students.length > 5 && (
                       <div className="text-xs text-gray-500">
-                        외 {classData.students.length - 5}명...
+                        외 {(classData.students?.length || 0) - 5}명...
                       </div>
                     )}
                   </div>
