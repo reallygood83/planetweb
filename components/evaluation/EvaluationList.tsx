@@ -3,14 +3,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { EvaluationPlan } from '@/types'
-import { Trash2, FileText, Calendar, BookOpen } from 'lucide-react'
+import { Trash2, FileText, Calendar, BookOpen, Sparkles } from 'lucide-react'
 
 interface EvaluationListProps {
   evaluations: EvaluationPlan[]
   onDelete: (evaluationId: string) => void
+  onGenerateSurvey?: (evaluation: EvaluationPlan) => void
 }
 
-export function EvaluationList({ evaluations, onDelete }: EvaluationListProps) {
+export function EvaluationList({ evaluations, onDelete, onGenerateSurvey }: EvaluationListProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ko-KR')
   }
@@ -77,7 +78,14 @@ export function EvaluationList({ evaluations, onDelete }: EvaluationListProps) {
               </div>
 
               <div className="flex gap-2 pt-2">
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1 flex items-center gap-1"
+                  onClick={() => onGenerateSurvey?.(evaluation)}
+                  disabled={!onGenerateSurvey}
+                >
+                  <Sparkles className="h-3 w-3" />
                   설문 생성
                 </Button>
                 <Button variant="outline" size="sm" className="flex-1">

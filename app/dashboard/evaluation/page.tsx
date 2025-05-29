@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { EvaluationList } from '@/components/evaluation/EvaluationList'
 import { CreateEvaluationModal } from '@/components/evaluation/CreateEvaluationModal'
 import { SmartPasteModal } from '@/components/evaluation/SmartPasteModal'
+import { GenerateSurveyModal } from '@/components/evaluation/GenerateSurveyModal'
 import { EvaluationPlan } from '@/types'
 import { Plus, FileText, Sparkles } from 'lucide-react'
 
@@ -17,6 +18,8 @@ export default function EvaluationPage() {
   const [error, setError] = useState<string | null>(null)
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [smartPasteOpen, setSmartPasteOpen] = useState(false)
+  const [surveyModalOpen, setSurveyModalOpen] = useState(false)
+  const [selectedEvaluation, setSelectedEvaluation] = useState<EvaluationPlan | null>(null)
 
   useEffect(() => {
     if (user) {
@@ -68,6 +71,20 @@ export default function EvaluationPage() {
   const handleSmartPasteSuccess = (analyzedData: EvaluationPlan) => {
     setEvaluations([analyzedData, ...evaluations])
     setSmartPasteOpen(false)
+  }
+
+  const handleGenerateSurvey = (evaluation: EvaluationPlan) => {
+    setSelectedEvaluation(evaluation)
+    setSurveyModalOpen(true)
+  }
+
+  const handleSurveySuccess = () => {
+    // 설문이 성공적으로 생성되었음을 알림
+    setSurveyModalOpen(false)
+    setSelectedEvaluation(null)
+    
+    // TODO: 설문 목록 페이지로 이동하거나 성공 메시지 표시
+    alert('자기평가 설문이 성공적으로 생성되었습니다!')
   }
 
   const handleDeleteEvaluation = async (evaluationId: string) => {
@@ -167,6 +184,7 @@ export default function EvaluationPage() {
         <EvaluationList
           evaluations={evaluations}
           onDelete={handleDeleteEvaluation}
+          onGenerateSurvey={handleGenerateSurvey}
         />
       )}
 
@@ -180,6 +198,13 @@ export default function EvaluationPage() {
         open={smartPasteOpen}
         onOpenChange={setSmartPasteOpen}
         onSuccess={handleSmartPasteSuccess}
+      />
+
+      <GenerateSurveyModal
+        open={surveyModalOpen}
+        onOpenChange={setSurveyModalOpen}
+        evaluationPlan={selectedEvaluation}
+        onSuccess={handleSurveySuccess}
       />
     </div>
   )
