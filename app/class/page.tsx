@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { ClassList } from '@/components/class/ClassList'
 import { CreateClassModal } from '@/components/class/CreateClassModal'
 import { EditClassModal } from '@/components/class/EditClassModal'
+import { ClassCreatedGuide } from '@/components/class/ClassCreatedGuide'
 import { Class } from '@/types'
 
 export default function ClassPage() {
@@ -17,6 +18,8 @@ export default function ClassPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [selectedClass, setSelectedClass] = useState<Class | null>(null)
+  const [showGuide, setShowGuide] = useState(false)
+  const [createdClass, setCreatedClass] = useState<Class | null>(null)
 
   useEffect(() => {
     if (user) {
@@ -57,6 +60,8 @@ export default function ClassPage() {
       if (data.success) {
         setClasses([data.data, ...classes])
         setCreateModalOpen(false)
+        setCreatedClass(data.data)
+        setShowGuide(true)
       } else {
         setError(data.error || '학급 생성에 실패했습니다.')
       }
@@ -186,6 +191,14 @@ export default function ClassPage() {
           onOpenChange={setEditModalOpen}
           onSubmit={handleEditClass}
           classData={selectedClass}
+        />
+      )}
+
+      {showGuide && createdClass && (
+        <ClassCreatedGuide
+          className={createdClass.class_name}
+          studentCount={createdClass.students.length}
+          onDismiss={() => setShowGuide(false)}
         />
       )}
     </div>

@@ -14,11 +14,38 @@ export default function DashboardPage() {
   const [apiKey, setApiKey] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [stats, setStats] = useState({
+    classCount: 0,
+    studentCount: 0,
+    evaluationCount: 0
+  })
   const supabase = createClient()
 
   useEffect(() => {
     checkApiKeyStatus()
+    fetchStats()
   }, [])
+
+  const fetchStats = async () => {
+    try {
+      // 학급 통계 조회
+      const classResponse = await fetch('/api/classes')
+      if (classResponse.ok) {
+        const classData = await classResponse.json()
+        if (classData.success) {
+          const classes = classData.data
+          const studentCount = classes.reduce((total: number, cls: any) => total + cls.students.length, 0)
+          setStats(prev => ({
+            ...prev,
+            classCount: classes.length,
+            studentCount
+          }))
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error)
+    }
+  }
 
   const checkApiKeyStatus = async () => {
     const encryptedKey = localStorage.getItem('gemini_api_key')
@@ -139,7 +166,7 @@ export default function DashboardPage() {
             <CardTitle className="text-lg">평가계획</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">0</p>
+            <p className="text-3xl font-bold">{stats.evaluationCount}</p>
             <p className="text-sm text-gray-500">등록된 평가계획</p>
           </CardContent>
         </Card>
@@ -149,18 +176,18 @@ export default function DashboardPage() {
             <CardTitle className="text-lg">학급</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">0</p>
+            <p className="text-3xl font-bold">{stats.classCount}</p>
             <p className="text-sm text-gray-500">관리중인 학급</p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">생성 콘텐츠</CardTitle>
+            <CardTitle className="text-lg">학생</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">0</p>
-            <p className="text-sm text-gray-500">생성된 생기부</p>
+            <p className="text-3xl font-bold">{stats.studentCount}</p>
+            <p className="text-sm text-gray-500">등록된 학생</p>
           </CardContent>
         </Card>
       </div>

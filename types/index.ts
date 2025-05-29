@@ -15,10 +15,13 @@ export interface Evaluation {
 
 export interface EvaluationPlan {
   id?: string
+  user_id?: string
   subject: string
   grade: string
   semester: string
   evaluations: Evaluation[]
+  created_at?: string
+  updated_at?: string
   createdAt?: string
   updatedAt?: string
 }
