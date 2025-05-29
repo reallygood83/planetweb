@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
@@ -106,7 +105,7 @@ export default function GenerateRecordPage() {
     if (selectedStudent && selectedClass) {
       fetchStudentResponses()
     }
-  }, [selectedStudent, selectedClass])
+  }, [selectedStudent, selectedClass, fetchStudentResponses])
 
   const fetchClasses = async () => {
     try {
@@ -122,7 +121,7 @@ export default function GenerateRecordPage() {
     }
   }
 
-  const fetchStudentResponses = async () => {
+  const fetchStudentResponses = useCallback(async () => {
     if (!selectedStudent || !selectedClass) return
 
     setIsLoadingResponses(true)
@@ -141,7 +140,7 @@ export default function GenerateRecordPage() {
     } finally {
       setIsLoadingResponses(false)
     }
-  }
+  }, [selectedStudent, selectedClass])
 
   const handleGenerateContent = async () => {
     if (!selectedResponse || !selectedStudent || !selectedClass) return

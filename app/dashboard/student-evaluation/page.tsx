@@ -1,12 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from '@/contexts/auth-context'
 import { 
   User, 
@@ -15,11 +13,8 @@ import {
   Search, 
   Calendar,
   Users,
-  Target,
   Sparkles,
-  Download,
-  Eye,
-  Filter
+  Eye
 } from 'lucide-react'
 
 interface Student {
@@ -71,8 +66,6 @@ export default function StudentEvaluationPage() {
   const [students, setStudents] = useState<Student[]>([])
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
   const [studentResponses, setStudentResponses] = useState<StudentResponse[]>([])
-  const [surveys, setSurveys] = useState<Survey[]>([])
-  const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [selectedResponse, setSelectedResponse] = useState<StudentResponse | null>(null)
@@ -80,7 +73,6 @@ export default function StudentEvaluationPage() {
   useEffect(() => {
     if (user) {
       fetchClasses()
-      fetchSurveys()
     }
   }, [user])
 
@@ -94,7 +86,7 @@ export default function StudentEvaluationPage() {
     if (selectedStudent && selectedClass) {
       fetchStudentResponses()
     }
-  }, [selectedStudent, selectedClass])
+  }, [selectedStudent, selectedClass, fetchStudentResponses])
 
   const fetchClasses = async () => {
     try {
@@ -110,21 +102,7 @@ export default function StudentEvaluationPage() {
     }
   }
 
-  const fetchSurveys = async () => {
-    try {
-      const response = await fetch('/api/surveys')
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success) {
-          setSurveys(data.data)
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching surveys:', error)
-    }
-  }
-
-  const fetchStudentResponses = async () => {
+  const fetchStudentResponses = useCallback(async () => {
     if (!selectedStudent || !selectedClass) return
 
     setIsLoading(true)
@@ -143,7 +121,7 @@ export default function StudentEvaluationPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [selectedStudent, selectedClass])
 
   const filteredStudents = students.filter(student =>
     student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
