@@ -17,21 +17,21 @@ export function ClassCreatedGuide({ className, studentCount, onDismiss }: ClassC
       icon: <FileText className="h-5 w-5 text-blue-600" />,
       title: "평가계획 등록",
       description: "교육과정에 맞는 평가계획을 등록하세요",
-      href: "/evaluation",
+      href: "/dashboard/evaluation",
       priority: "high"
     },
     {
       icon: <Sparkles className="h-5 w-5 text-purple-600" />,
       title: "자기평가 설문 생성",
       description: "학생들이 응답할 자기평가 설문을 AI로 생성하세요",
-      href: "/evaluation",
+      href: "/dashboard/evaluation",
       priority: "high"
     },
     {
       icon: <Users className="h-5 w-5 text-green-600" />,
       title: "학생 자기평가 수집",
       description: "학생들에게 설문 링크를 공유하고 응답을 수집하세요",
-      href: "/evaluation",
+      href: "/dashboard/evaluation",
       priority: "medium"
     }
   ]
@@ -92,7 +92,7 @@ export function ClassCreatedGuide({ className, studentCount, onDismiss }: ClassC
             <Button variant="outline" onClick={onDismiss} className="flex-1">
               나중에 하기
             </Button>
-            <Link href="/evaluation" className="flex-1">
+            <Link href="/dashboard/evaluation" className="flex-1">
               <Button className="w-full">
                 평가계획 등록하기
               </Button>

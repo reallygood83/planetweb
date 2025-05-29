@@ -1,49 +1,28 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { User } from '@supabase/supabase-js'
+import { useAuth } from '@/contexts/auth-context'
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { user, loading, signOut } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
-  const supabase = createClient()
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-      setLoading(false)
-      
-      if (!user) {
-        router.push('/auth/login')
-      }
+    if (!loading && !user) {
+      router.push('/auth/login')
     }
-
-    checkUser()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      if (!session?.user) {
-        router.push('/auth/login')
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [router, supabase])
+  }, [user, loading, router])
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.push('/')
+    await signOut()
   }
 
   if (loading) {
@@ -56,9 +35,9 @@ export default function DashboardLayout({
 
   const navigation = [
     { name: '대시보드', href: '/dashboard' },
-    { name: '평가계획', href: '/evaluation' },
-    { name: '학급관리', href: '/class' },
-    { name: '콘텐츠 생성', href: '/generate' },
+    { name: '평가계획', href: '/dashboard/evaluation' },
+    { name: '학급관리', href: '/dashboard/class' },
+    { name: '콘텐츠 생성', href: '/dashboard/generate' },
   ]
 
   return (
