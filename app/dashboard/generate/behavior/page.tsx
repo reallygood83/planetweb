@@ -83,39 +83,58 @@ export default function BehaviorSurveyPage() {
     if (!generatedSurvey) return
 
     try {
+      const surveyData = {
+        title: generatedSurvey.title,
+        description: generatedSurvey.description,
+        questions: generatedSurvey.questions,
+        survey_type: 'behavior_development',
+        behavior_criteria: {
+          selectedValues,
+          observationContext,
+          classActivities,
+          specialEvents,
+          grade,
+          semester
+        }
+      }
+
       const response = await fetch('/api/surveys', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          title: generatedSurvey.title,
-          description: generatedSurvey.description,
-          questions: generatedSurvey.questions,
-          survey_type: 'behavior_development',
-          behavior_criteria: {
-            selectedValues,
-            observationContext,
-            classActivities,
-            specialEvents,
-            grade,
-            semester
-          }
-        })
+        body: JSON.stringify(surveyData)
       })
 
       const data = await response.json()
 
       if (data.success) {
         alert('행동발달사항 설문이 저장되었습니다!')
-        // Redirect to surveys management page
+        window.location.href = '/dashboard/surveys'
+      } else if (data.useLocalStorage && data.error === 'DATABASE_NOT_CONFIGURED') {
+        // 데이터베이스가 설정되지 않은 경우 로컬 저장소에 저장
+        console.log('Saving behavior survey to localStorage due to database not configured')
+        
+        const savedSurveys = JSON.parse(localStorage.getItem('saved_surveys') || '[]')
+        const newSurvey = {
+          id: `local-${Date.now()}`,
+          ...surveyData,
+          created_at: new Date().toISOString()
+        }
+        
+        savedSurveys.push(newSurvey)
+        localStorage.setItem('saved_surveys', JSON.stringify(savedSurveys))
+        
+        alert('데이터베이스가 설정되지 않아 행동발달사항 설문이 브라우저에 임시 저장되었습니다.\n실제 서비스 이용을 위해서는 데이터베이스 설정이 필요합니다.')
         window.location.href = '/dashboard/surveys'
       } else {
-        alert('설문 저장에 실패했습니다: ' + (data.error || '알 수 없는 오류'))
+        const errorMessage = data.message || data.error || '알 수 없는 오류'
+        alert('설문 저장에 실패했습니다: ' + errorMessage)
+        console.error('Survey save error:', data)
       }
     } catch (error) {
       console.error('Error saving survey:', error)
-      alert('설문 저장 중 오류가 발생했습니다.')
+      alert('설문 저장 중 네트워크 오류가 발생했습니다.')
     }
   }
 

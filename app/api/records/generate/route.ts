@@ -25,12 +25,25 @@ const NEIS_RULES = {
 
 export async function POST(request: NextRequest) {
   try {
+    // Supabase 연결 확인
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
+      console.log('Supabase not configured for record generation')
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Database not configured. Please set up Supabase connection.' 
+      }, { status: 503 })
+    }
+
     const supabase = await createClient()
     
     // 현재 사용자 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      console.log('No authenticated user for record generation')
+      return NextResponse.json({ 
+        success: false,
+        error: 'Authentication required' 
+      }, { status: 401 })
     }
 
     const body = await request.json()
@@ -70,15 +83,22 @@ export async function POST(request: NextRequest) {
     // 사용자의 API 키 조회
     const { data: profile } = await supabase
       .from('profiles')
-      .select('api_key_hint')
+      .select('api_key_hint, encrypted_api_key')
       .eq('id', user.id)
       .single()
 
     // 사용자 API 키가 있으면 사용, 없으면 환경 변수 사용
     let apiKey = ''
-    if (profile?.api_key_hint) {
-      // TODO: 실제 구현시 암호화된 API 키를 복호화해야 함
-      apiKey = profile.api_key_hint
+    if (profile?.encrypted_api_key) {
+      // 암호화된 API 키를 복호화
+      try {
+        const { decryptApiKey } = await import('@/lib/utils')
+        const encryptKey = process.env.ENCRYPT_KEY || 'default-key'
+        apiKey = decryptApiKey(profile.encrypted_api_key, encryptKey)
+      } catch (decryptError) {
+        console.error('Failed to decrypt user API key:', decryptError)
+        apiKey = process.env.GEMINI_API_KEY || ''
+      }
     } else {
       apiKey = process.env.GEMINI_API_KEY || ''
     }
@@ -87,6 +107,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ 
         success: false, 
         error: 'API key not configured. Please set your API key in the dashboard.' 
+      }, { status: 400 })
+    }
+
+    // API 키 형식 검증
+    if (!apiKey.startsWith('AIza')) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Invalid API key format. Please check your Gemini API key.' 
       }, { status: 400 })
     }
 

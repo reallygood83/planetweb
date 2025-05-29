@@ -18,7 +18,9 @@ export async function POST(request: NextRequest) {
       subject = '',
       teacherNotes = '',
       additionalContext = '',
-      evaluationResults = []
+      evaluationResults = [],
+      evaluationPlan = null,
+      studentResponse = null
     } = body
 
     // 필수 항목 검증
@@ -52,7 +54,9 @@ export async function POST(request: NextRequest) {
       teacherNotes,
       additionalContext,
       className,
-      evaluationResults
+      evaluationResults,
+      evaluationPlan,
+      studentResponse
     })
 
     // Gemini API 호출
@@ -128,7 +132,21 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function createSimplePrompt({ recordType, subject, teacherNotes, additionalContext, className, evaluationResults }: any) {
+function createSimplePrompt({ recordType, subject, teacherNotes, additionalContext, className, evaluationResults, evaluationPlan, studentResponse }: any) {
+  // 평가 계획 정보
+  let evaluationPlanInfo = ''
+  if (evaluationPlan) {
+    evaluationPlanInfo = `
+**평가 계획 정보:**
+- 과목: ${evaluationPlan.subject || ''}
+- 학년: ${evaluationPlan.grade || ''}
+- 단원: ${evaluationPlan.unit || ''}
+- 학습목표: ${evaluationPlan.learning_objectives?.join(', ') || ''}
+- 성취기준: ${evaluationPlan.achievement_standards?.join(', ') || ''}
+- 평가기준: ${evaluationPlan.evaluation_criteria || ''}
+`
+  }
+
   // 평가 결과 요약
   let evaluationSummary = ''
   if (evaluationResults && evaluationResults.length > 0) {
@@ -144,13 +162,46 @@ function createSimplePrompt({ recordType, subject, teacherNotes, additionalConte
 - 보통: ${averageCount}개
 - 노력요함: ${needsImprovementCount}개
 
-**주요 성취 내용:**
+**상세 평가 결과:**
+${evaluationResults
+  .map((r: any) => `- ${r.evaluation_name}: ${r.result} ${r.result_criteria ? `(${r.result_criteria})` : ''}`)
+  .join('\n')}
+
+**우수 성취 내용:**
 ${evaluationResults
   .filter((r: any) => r.result === '매우잘함' || r.result === '잘함')
-  .map((r: any) => `- ${r.evaluation_name}: ${r.result_criteria}`)
+  .map((r: any) => `- ${r.evaluation_name}: ${r.result_criteria || r.result}`)
   .join('\n')}
 `
   }
+
+  // 학생 자기평가 정보
+  let studentSelfEvaluation = ''
+  if (studentResponse && studentResponse.responses) {
+    const { responses } = studentResponse
+    studentSelfEvaluation = `
+**학생 자기평가 내용:**
+`
+    if (responses.multipleChoice && responses.multipleChoice.length > 0) {
+      studentSelfEvaluation += `
+[객관식 응답]
+${responses.multipleChoice.map((mc: any, idx: number) => 
+  `Q${idx + 1}. ${mc.question}\nA: ${mc.answer}`
+).join('\n\n')}
+`
+    }
+    
+    if (responses.shortAnswer && responses.shortAnswer.length > 0) {
+      studentSelfEvaluation += `
+[주관식 응답]
+${responses.shortAnswer.map((sa: any, idx: number) => 
+  `Q${idx + 1}. ${sa.question}\nA: ${sa.answer}`
+).join('\n\n')}
+`
+    }
+  }
+
+  const hasEvaluationData = evaluationResults?.length > 0 || evaluationPlan || studentResponse
 
   const basePrompt = `초등학교 생활기록부 "${recordType}" 항목을 작성해주세요.
 
@@ -160,22 +211,32 @@ ${evaluationResults
 3. 500자 이내로 작성하세요
 4. '뛰어난', '탁월한', '우수한', '최고의', '완벽한', '훌륭한' 등의 과도한 표현을 피하세요
 5. 구체적이고 객관적인 관찰 내용을 포함하세요
-${evaluationResults && evaluationResults.length > 0 ? '6. 평가 결과를 참고하여 학생의 성취 수준을 적절히 반영하세요' : ''}
+${hasEvaluationData ? '6. 평가 계획, 평가 결과, 학생 자기평가를 종합적으로 참고하여 학생의 성취 수준을 정확히 반영하세요' : ''}
 
 **기본 정보:**
 - 작성 항목: ${recordType}
 ${subject ? `- 과목: ${subject}` : ''}
 ${className ? `- 학급: ${className}` : ''}
 
+${evaluationPlanInfo}
+
 ${evaluationSummary}
+
+${studentSelfEvaluation}
 
 **교사 관찰 기록:**
 ${teacherNotes}
 
 ${additionalContext ? `**추가 맥락:**\n${additionalContext}` : ''}
 
-위 정보를 바탕으로 ${recordType}을 작성해주세요. 
-${evaluationResults && evaluationResults.length > 0 ? '평가 결과와 교사 관찰 내용을 종합하여, 학생의 성취와 성장을 구체적으로 서술하세요.' : ''}
+**작성 지침:**
+위의 모든 정보를 종합하여 ${recordType}을 작성해주세요.
+- 평가 계획에서 설정한 학습목표와 성취기준을 기준으로 학생의 성취 정도를 평가하세요
+- 평가 결과 데이터를 바탕으로 구체적인 성취 수준을 명시하세요
+- 학생의 자기평가 내용에서 드러나는 학습 태도와 성찰 내용을 반영하세요
+- 교사의 관찰 내용을 통해 수업 중 구체적인 모습을 서술하세요
+- 단순한 결과 나열이 아닌, 학생의 성장과 학습 과정을 종합적으로 기술하세요
+
 반드시 명사형 종결어미로 끝나는 완성된 문장으로 작성하고, 학생 이름은 절대 포함하지 마세요.`
   
   return basePrompt

@@ -31,6 +31,8 @@ interface Survey {
     }>
   }
   created_at: string
+  survey_type?: string
+  behavior_criteria?: any
   evaluation_plans?: {
     id: string
     subject: string
@@ -54,6 +56,7 @@ export default function SurveysPage() {
   const [classes, setClasses] = useState<ClassInfo[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null)
+  const [hasLocalSurveys, setHasLocalSurveys] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -64,20 +67,44 @@ export default function SurveysPage() {
 
   const fetchSurveys = async () => {
     try {
+      // 먼저 서버에서 설문 목록을 가져오려고 시도
       const response = await fetch('/api/surveys')
+      let serverSurveys: Survey[] = []
+      
       if (response.ok) {
         const data = await response.json()
         if (data.success && Array.isArray(data.data)) {
-          setSurveys(data.data)
-        } else {
-          setSurveys([])
+          serverSurveys = data.data
         }
-      } else {
-        setSurveys([])
+      }
+      
+      // 로컬 저장소에서 저장된 설문들도 가져오기
+      const localSurveys = JSON.parse(localStorage.getItem('saved_surveys') || '[]')
+      
+      // 서버 설문과 로컬 설문을 합치기
+      const allSurveys = [...serverSurveys, ...localSurveys]
+      
+      // 중복 제거 (ID 기준)
+      const uniqueSurveys = allSurveys.filter((survey, index, arr) => 
+        arr.findIndex(s => s.id === survey.id) === index
+      )
+      
+      // 생성 날짜 기준으로 정렬 (최신순)
+      uniqueSurveys.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      
+      setSurveys(uniqueSurveys)
+      setHasLocalSurveys(localSurveys.length > 0)
+      
+      if (localSurveys.length > 0) {
+        console.log(`Found ${localSurveys.length} surveys in local storage`)
       }
     } catch (error) {
       console.error('Error fetching surveys:', error)
-      setSurveys([])
+      
+      // 서버 오류시 로컬 저장소의 설문만이라도 표시
+      const localSurveys = JSON.parse(localStorage.getItem('saved_surveys') || '[]')
+      setSurveys(localSurveys)
+      setHasLocalSurveys(localSurveys.length > 0)
     } finally {
       setIsLoading(false)
     }
@@ -183,6 +210,29 @@ export default function SurveysPage() {
         </div>
       </div>
 
+      {/* Database Configuration Notice */}
+      {hasLocalSurveys && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 w-5 h-5 text-yellow-600 mt-0.5">
+              ⚠️
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-yellow-800 mb-1">
+                임시 저장된 설문이 있습니다
+              </h3>
+              <p className="text-sm text-yellow-700 mb-2">
+                데이터베이스가 설정되지 않아 일부 설문이 브라우저에만 임시 저장되어 있습니다. 
+                실제 서비스 이용을 위해서는 Supabase 데이터베이스 설정이 필요합니다.
+              </p>
+              <p className="text-xs text-yellow-600">
+                💡 임시 저장된 설문은 브라우저 데이터를 삭제하면 사라질 수 있습니다.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Class Links Section */}
       {classes.length > 0 && (
         <Card>
@@ -265,6 +315,11 @@ export default function SurveysPage() {
                       </CardDescription>
                     )}
                     <div className="flex flex-wrap gap-2">
+                      {survey.id.startsWith('local-') && (
+                        <Badge variant="destructive" className="text-xs">
+                          임시 저장
+                        </Badge>
+                      )}
                       {survey.evaluation_plans && (
                         <>
                           <Badge variant="secondary">
@@ -280,6 +335,11 @@ export default function SurveysPage() {
                             {survey.evaluation_plans.unit}
                           </Badge>
                         </>
+                      )}
+                      {!survey.evaluation_plans && survey.survey_type === 'behavior_development' && (
+                        <Badge variant="secondary">
+                          행동발달사항
+                        </Badge>
                       )}
                     </div>
                   </div>

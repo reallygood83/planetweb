@@ -85,6 +85,11 @@ export default function GenerateRecordPage() {
   const [studentResponses, setStudentResponses] = useState<StudentResponse[]>([])
   const [selectedResponse, setSelectedResponse] = useState<StudentResponse | null>(null)
   
+  // Evaluation data
+  const [evaluationPlans, setEvaluationPlans] = useState<any[]>([])
+  const [selectedEvaluationPlan, setSelectedEvaluationPlan] = useState<any>(null)
+  const [evaluationResults, setEvaluationResults] = useState<any[]>([])
+  
   // Record generation
   const [recordType, setRecordType] = useState<string>('교과학습발달상황')
   const [selectedSubject, setSelectedSubject] = useState<string>('')
@@ -107,6 +112,43 @@ export default function GenerateRecordPage() {
       }
     } catch (error) {
       console.error('Error fetching classes:', error)
+    }
+  }
+
+  const fetchEvaluationPlans = async () => {
+    try {
+      const response = await fetch('/api/evaluations')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          setEvaluationPlans(data.data || [])
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching evaluation plans:', error)
+      setEvaluationPlans([])
+    }
+  }
+
+  const fetchEvaluationResults = async (studentName: string, evaluationPlanId?: string) => {
+    if (!selectedClass || !studentName) return
+
+    try {
+      let url = `/api/evaluation-results?classId=${selectedClass.id}&studentName=${encodeURIComponent(studentName)}`
+      if (evaluationPlanId) {
+        url += `&evaluationPlanId=${evaluationPlanId}`
+      }
+      
+      const response = await fetch(url)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          setEvaluationResults(data.data || [])
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching evaluation results:', error)
+      setEvaluationResults([])
     }
   }
 
@@ -134,14 +176,22 @@ export default function GenerateRecordPage() {
   useEffect(() => {
     if (user) {
       fetchClasses()
+      fetchEvaluationPlans()
     }
   }, [user])
 
   useEffect(() => {
     if (selectedStudent && selectedClass) {
       fetchStudentResponses()
+      fetchEvaluationResults(selectedStudent.name)
     }
-  }, [selectedStudent, selectedClass, fetchStudentResponses])
+  }, [selectedStudent, selectedClass, fetchStudentResponses, fetchEvaluationResults])
+
+  useEffect(() => {
+    if (selectedStudent && selectedEvaluationPlan) {
+      fetchEvaluationResults(selectedStudent.name, selectedEvaluationPlan.id)
+    }
+  }, [selectedStudent, selectedEvaluationPlan, fetchEvaluationResults])
 
   const handleGenerateContent = async () => {
     if (!selectedStudent || !selectedClass || !teacherNotes.trim()) {
@@ -149,23 +199,44 @@ export default function GenerateRecordPage() {
       return
     }
 
+    // 교과학습발달상황인 경우 평가 계획이나 과목 선택 확인
+    if (recordType === '교과학습발달상황') {
+      const hasSubject = selectedEvaluationPlan?.subject || 
+                        selectedResponse?.survey.evaluation_plans?.subject || 
+                        selectedSubject
+      if (!hasSubject) {
+        alert('교과학습발달상황 작성을 위해 평가 계획을 선택하거나 과목을 선택해주세요.')
+        return
+      }
+    }
+
     setIsGenerating(true)
     try {
-      // 간단한 API 사용 (Supabase 연결 없이도 동작)
+      // 생기부 생성에 필요한 모든 데이터 수집
+      const requestData = {
+        studentName: selectedStudent.name,
+        className: selectedClass.name,
+        recordType,
+        subject: recordType === '교과학습발달상황' ? 
+          (selectedEvaluationPlan?.subject || selectedResponse?.survey.evaluation_plans?.subject || selectedSubject || '전과목') : undefined,
+        teacherNotes,
+        additionalContext,
+        // 평가 계획 정보 추가
+        evaluationPlan: selectedEvaluationPlan,
+        // 평가 결과 정보 추가
+        evaluationResults: evaluationResults,
+        // 학생 자기평가 정보
+        studentResponse: selectedResponse
+      }
+      
+      console.log('Generating record with data:', requestData)
+
       const response = await fetch('/api/records/generate-simple', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          studentName: selectedStudent.name,
-          className: selectedClass.name,
-          recordType,
-          subject: recordType === '교과학습발달상황' ? 
-            (selectedResponse?.survey.evaluation_plans?.subject || selectedSubject || '전과목') : undefined,
-          teacherNotes,
-          additionalContext
-        })
+        body: JSON.stringify(requestData)
       })
 
       const data = await response.json()
@@ -241,7 +312,19 @@ export default function GenerateRecordPage() {
       case 1: return selectedClass !== null
       case 2: return selectedStudent !== null
       case 3: return true // 자기평가는 선택사항
-      case 4: return teacherNotes.trim() !== ''
+      case 4: {
+        const hasTeacherNotes = teacherNotes.trim() !== ''
+        
+        // 교과학습발달상황인 경우 평가 계획이나 과목 선택 필요
+        if (recordType === '교과학습발달상황') {
+          const hasSubject = selectedEvaluationPlan?.subject || 
+                            selectedResponse?.survey.evaluation_plans?.subject || 
+                            selectedSubject
+          return hasTeacherNotes && hasSubject
+        }
+        
+        return hasTeacherNotes
+      }
       case 5: return generatedContent !== null
       default: return false
     }
@@ -460,37 +543,123 @@ export default function GenerateRecordPage() {
                 </div>
               </div>
 
-              {/* Subject Selection (for 교과학습발달상황) */}
+              {/* Evaluation Plan Selection (for 교과학습발달상황) */}
               {recordType === '교과학습발달상황' && (
-                <div className="space-y-2">
-                  <Label htmlFor="subject">과목 선택</Label>
-                  <select
-                    id="subject"
-                    value={selectedResponse?.survey.evaluation_plans?.subject || selectedSubject}
-                    onChange={(e) => {
-                      setSelectedSubject(e.target.value)
-                    }}
-                    className="w-full px-3 py-2 border rounded-md"
-                    disabled={!!selectedResponse?.survey.evaluation_plans?.subject}
-                  >
-                    <option value="">과목을 선택하세요</option>
-                    <option value="국어">국어</option>
-                    <option value="수학">수학</option>
-                    <option value="사회">사회</option>
-                    <option value="과학">과학</option>
-                    <option value="영어">영어</option>
-                    <option value="도덕">도덕</option>
-                    <option value="실과">실과</option>
-                    <option value="체육">체육</option>
-                    <option value="음악">음악</option>
-                    <option value="미술">미술</option>
-                  </select>
-                  {selectedResponse?.survey.evaluation_plans?.subject && (
-                    <p className="text-sm text-gray-500">
-                      선택된 자기평가 설문의 과목({selectedResponse.survey.evaluation_plans.subject})이 자동으로 적용됩니다.
-                    </p>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="evaluationPlan">평가 계획 선택</Label>
+                    <div className="space-y-2">
+                      <div 
+                        className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                          selectedEvaluationPlan === null
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        onClick={() => setSelectedEvaluationPlan(null)}
+                      >
+                        <div className="font-medium">평가 계획 없이 생성</div>
+                        <p className="text-sm text-gray-500 mt-1">
+                          직접 과목을 입력하여 생기부를 생성합니다
+                        </p>
+                      </div>
+                      
+                      {evaluationPlans.map((plan) => (
+                        <div
+                          key={plan.id}
+                          className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                            selectedEvaluationPlan?.id === plan.id
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                          onClick={() => setSelectedEvaluationPlan(plan)}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <div className="font-medium flex items-center gap-2">
+                                <Target className="h-4 w-4 text-blue-600" />
+                                {plan.subject} - {plan.unit}
+                              </div>
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                <Badge variant="secondary">{plan.grade}</Badge>
+                                <Badge variant="outline">{plan.semester}</Badge>
+                              </div>
+                              {plan.learning_objectives && plan.learning_objectives.length > 0 && (
+                                <p className="text-sm text-gray-600 mt-2">
+                                  목표: {plan.learning_objectives.join(', ')}
+                                </p>
+                              )}
+                            </div>
+                            {selectedEvaluationPlan?.id === plan.id && (
+                              <Check className="h-5 w-5 text-blue-600" />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Subject Selection (when no evaluation plan) */}
+                  {!selectedEvaluationPlan && (
+                    <div className="space-y-2">
+                      <Label htmlFor="subject">과목 선택</Label>
+                      <select
+                        id="subject"
+                        value={selectedResponse?.survey.evaluation_plans?.subject || selectedSubject}
+                        onChange={(e) => {
+                          setSelectedSubject(e.target.value)
+                        }}
+                        className="w-full px-3 py-2 border rounded-md"
+                        disabled={!!selectedResponse?.survey.evaluation_plans?.subject}
+                      >
+                        <option value="">과목을 선택하세요</option>
+                        <option value="국어">국어</option>
+                        <option value="수학">수학</option>
+                        <option value="사회">사회</option>
+                        <option value="과학">과학</option>
+                        <option value="영어">영어</option>
+                        <option value="도덕">도덕</option>
+                        <option value="실과">실과</option>
+                        <option value="체육">체육</option>
+                        <option value="음악">음악</option>
+                        <option value="미술">미술</option>
+                      </select>
+                    </div>
+                  )}
+                  
+                  {/* Evaluation Results Summary */}
+                  {evaluationResults.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>해당 학생의 평가 결과</Label>
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>매우잘함: {evaluationResults.filter(r => r.result === '매우잘함').length}개</div>
+                          <div>잘함: {evaluationResults.filter(r => r.result === '잘함').length}개</div>
+                          <div>보통: {evaluationResults.filter(r => r.result === '보통').length}개</div>
+                          <div>노력요함: {evaluationResults.filter(r => r.result === '노력요함').length}개</div>
+                        </div>
+                        {evaluationResults.filter(r => r.result === '매우잘함' || r.result === '잘함').length > 0 && (
+                          <div className="mt-2 pt-2 border-t">
+                            <p className="text-xs text-gray-600 font-medium mb-1">우수 성취:</p>
+                            {evaluationResults
+                              .filter(r => r.result === '매우잘함' || r.result === '잘함')
+                              .slice(0, 3)
+                              .map((r, idx) => (
+                                <p key={idx} className="text-xs text-gray-600">
+                                  • {r.evaluation_name}: {r.result}
+                                </p>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
+              )}
+
+              {recordType !== '교과학습발달상황' && selectedResponse?.survey.evaluation_plans?.subject && (
+                <p className="text-sm text-gray-500">
+                  선택된 자기평가 설문의 과목({selectedResponse.survey.evaluation_plans.subject})이 자동으로 적용됩니다.
+                </p>
               )}
 
               {/* Teacher Notes */}
