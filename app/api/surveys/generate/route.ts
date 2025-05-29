@@ -23,15 +23,31 @@ export async function POST(request: NextRequest) {
     
     console.log('Survey generate request body:', JSON.stringify(body, null, 2))
     
-    const { 
-      subject, 
-      grade, 
-      semester, 
-      unit,
-      learningObjectives,
-      achievementStandards,
-      evaluationCriteria
-    } = body
+    // 두 가지 형식의 요청 처리
+    let subject, grade, semester, unit, learningObjectives, achievementStandards, evaluationCriteria
+    
+    if (body.evaluationPlan) {
+      // 평가계획 모달에서 온 요청
+      const plan = body.evaluationPlan
+      subject = plan.subject
+      grade = plan.grade
+      semester = plan.semester
+      unit = plan.unit
+      learningObjectives = plan.learning_objectives?.join('\n') || ''
+      achievementStandards = plan.achievement_standards?.map((std: any) => 
+        `${std.code ? `[${std.code}] ` : ''}${std.content}`
+      ).join('\n') || ''
+      evaluationCriteria = JSON.stringify(plan.evaluation_criteria) || ''
+    } else {
+      // 직접 입력 페이지에서 온 요청
+      subject = body.subject
+      grade = body.grade
+      semester = body.semester
+      unit = body.unit
+      learningObjectives = body.learningObjectives
+      achievementStandards = body.achievementStandards
+      evaluationCriteria = body.evaluationCriteria
+    }
 
     console.log('Extracted values:', { 
       subject: `"${subject}"`, 
@@ -67,33 +83,41 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 사용자의 API 키 조회
-    console.log('Fetching user profile for API key...')
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('api_key_hint, encrypted_api_key')
-      .eq('id', user.id)
-      .single()
-
-    console.log('Profile fetch result:', { profile: profile ? { has_hint: !!profile.api_key_hint, has_encrypted: !!profile.encrypted_api_key } : null, profileError })
-
-    // 사용자 API 키가 있으면 사용, 없으면 환경 변수 사용
+    // API 키 처리
     let apiKey = ''
-    if (profile?.encrypted_api_key) {
-      // 암호화된 API 키를 복호화
-      try {
-        const { decryptApiKey } = await import('@/lib/utils')
-        const encryptKey = process.env.ENCRYPT_KEY || 'default-key'
-        apiKey = decryptApiKey(profile.encrypted_api_key, encryptKey)
-        console.log('Using user API key (decrypted):', `${apiKey.substring(0, 10)}...`)
-      } catch (decryptError) {
-        console.log('Failed to decrypt user API key:', decryptError)
-        apiKey = process.env.GEMINI_API_KEY || ''
-        console.log('Fallback to environment API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NOT SET')
-      }
+    
+    // 클라이언트에서 직접 전송한 API 키가 있는 경우
+    if (body.apiKey) {
+      console.log('Using API key from request body')
+      apiKey = body.apiKey
     } else {
-      apiKey = process.env.GEMINI_API_KEY || ''
-      console.log('Using environment API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NOT SET')
+      // 사용자의 API 키 조회
+      console.log('Fetching user profile for API key...')
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('api_key_hint, encrypted_api_key')
+        .eq('id', user.id)
+        .single()
+
+      console.log('Profile fetch result:', { profile: profile ? { has_hint: !!profile.api_key_hint, has_encrypted: !!profile.encrypted_api_key } : null, profileError })
+
+      // 사용자 API 키가 있으면 사용, 없으면 환경 변수 사용
+      if (profile?.encrypted_api_key) {
+        // 암호화된 API 키를 복호화
+        try {
+          const { decryptApiKey } = await import('@/lib/utils')
+          const encryptKey = process.env.ENCRYPT_KEY || 'default-key'
+          apiKey = decryptApiKey(profile.encrypted_api_key, encryptKey)
+          console.log('Using user API key (decrypted):', `${apiKey.substring(0, 10)}...`)
+        } catch (decryptError) {
+          console.log('Failed to decrypt user API key:', decryptError)
+          apiKey = process.env.GEMINI_API_KEY || ''
+          console.log('Fallback to environment API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NOT SET')
+        }
+      } else {
+        apiKey = process.env.GEMINI_API_KEY || ''
+        console.log('Using environment API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NOT SET')
+      }
     }
 
     if (!apiKey) {
