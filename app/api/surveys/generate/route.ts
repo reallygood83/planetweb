@@ -90,6 +90,7 @@ export async function POST(request: NextRequest) {
     if (body.apiKey) {
       console.log('Using API key from request body')
       apiKey = body.apiKey
+      console.log('API key from client:', apiKey.substring(0, 10) + '...')
     } else {
       // 사용자의 API 키 조회
       console.log('Fetching user profile for API key...')

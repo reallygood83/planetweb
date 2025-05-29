@@ -44,9 +44,21 @@ export function GenerateSurveyModal({
   const handleGenerate = async () => {
     if (!evaluationPlan) return
 
-    const apiKey = localStorage.getItem('gemini_api_key')
-    if (!apiKey) {
+    const encryptedKey = localStorage.getItem('gemini_api_key')
+    if (!encryptedKey) {
       setError('먼저 API 키를 설정해주세요.')
+      return
+    }
+
+    // 암호화된 키를 복호화
+    let apiKey = ''
+    try {
+      const { decryptApiKey } = await import('@/lib/utils')
+      const encryptKey = process.env.NEXT_PUBLIC_ENCRYPT_KEY || 'default-key'
+      apiKey = decryptApiKey(encryptedKey.replace(/"/g, ''), encryptKey)
+    } catch (decryptError) {
+      console.error('Failed to decrypt API key:', decryptError)
+      setError('API 키 복호화에 실패했습니다. 다시 설정해주세요.')
       return
     }
 
@@ -61,7 +73,7 @@ export function GenerateSurveyModal({
         },
         body: JSON.stringify({
           evaluationPlan,
-          apiKey: apiKey.replace(/"/g, '')
+          apiKey: apiKey
         }),
       })
 
