@@ -39,13 +39,20 @@ export default function RecordsPage() {
     try {
       setLoading(true)
       const response = await fetch('/api/teacher/records')
-      const data = await response.json()
-
-      if (data.success) {
-        setRecords(data.data)
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && Array.isArray(data.data)) {
+          setRecords(data.data)
+        } else {
+          setRecords([])
+        }
+      } else {
+        setRecords([])
       }
     } catch (error) {
       console.error('Error fetching records:', error)
+      setRecords([])
     } finally {
       setLoading(false)
     }
@@ -65,7 +72,7 @@ export default function RecordsPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          recordIds: records.map(r => r.id)
+          recordIds: Array.isArray(records) ? records.map(r => r.id) : []
         })
       })
 
@@ -84,19 +91,19 @@ export default function RecordsPage() {
     }
   }
 
-  // 필터링된 기록
-  const filteredRecords = records.filter(record => {
+  // 필터링된 기록 - 안전한 배열 처리
+  const filteredRecords = Array.isArray(records) ? records.filter(record => {
     if (selectedType === 'all') return true
     return record.record_type === selectedType
-  })
+  }) : []
 
-  // 기록 타입별 통계
+  // 기록 타입별 통계 - 안전한 배열 처리
   const recordStats = {
-    total: records.length,
+    total: Array.isArray(records) ? records.length : 0,
     byType: {
-      '교과학습발달상황': records.filter(r => r.record_type === '교과학습발달상황').length,
-      '창의적 체험활동 누가기록': records.filter(r => r.record_type === '창의적 체험활동 누가기록').length,
-      '행동특성 및 종합의견': records.filter(r => r.record_type === '행동특성 및 종합의견').length
+      '교과학습발달상황': Array.isArray(records) ? records.filter(r => r.record_type === '교과학습발달상황').length : 0,
+      '창의적 체험활동 누가기록': Array.isArray(records) ? records.filter(r => r.record_type === '창의적 체험활동 누가기록').length : 0,
+      '행동특성 및 종합의견': Array.isArray(records) ? records.filter(r => r.record_type === '행동특성 및 종합의견').length : 0
     }
   }
 
