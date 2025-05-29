@@ -2,8 +2,8 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { EvaluationPlan } from '@/types'
-import { Trash2, FileText, Calendar, BookOpen, Sparkles } from 'lucide-react'
+import { EvaluationPlan } from '@/lib/types/evaluation'
+import { Trash2, Calendar, BookOpen, Sparkles, Target, Award } from 'lucide-react'
 
 interface EvaluationListProps {
   evaluations: EvaluationPlan[]
@@ -32,6 +32,9 @@ export function EvaluationList({ evaluations, onDelete, onGenerateSurvey }: Eval
                     <Calendar className="h-3 w-3" />
                     {evaluation.grade} • {evaluation.semester}
                   </span>
+                  <span className="text-blue-600 font-medium">
+                    {evaluation.unit}
+                  </span>
                 </CardDescription>
               </div>
               <Button
@@ -47,33 +50,66 @@ export function EvaluationList({ evaluations, onDelete, onGenerateSurvey }: Eval
           
           <CardContent>
             <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <FileText className="h-4 w-4" />
-                <span>평가 {evaluation.evaluations.length}개</span>
-              </div>
-              
-              {evaluation.evaluations.length > 0 && (
+              {/* 성취기준 표시 */}
+              {evaluation.achievement_standards && evaluation.achievement_standards.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-700">평가 목록:</p>
-                  <div className="space-y-1 max-h-24 overflow-y-auto">
-                    {evaluation.evaluations.slice(0, 3).map((evaluationItem, index) => (
-                      <div key={index} className="text-sm text-gray-600 bg-gray-50 px-2 py-1 rounded">
-                        {evaluationItem.evaluationName}
-                        {evaluationItem.unitName && ` (${evaluationItem.unitName})`}
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Target className="h-4 w-4" />
+                    <span>성취기준 {evaluation.achievement_standards.length}개</span>
+                  </div>
+                  <div className="space-y-1">
+                    {evaluation.achievement_standards.slice(0, 2).map((standard, index) => (
+                      <div key={index} className="text-xs text-gray-600 bg-blue-50 px-2 py-1 rounded">
+                        <span className="font-mono text-blue-700">{standard.code}</span>
+                        <span className="ml-2">{standard.content.slice(0, 30)}...</span>
                       </div>
                     ))}
-                    {evaluation.evaluations.length > 3 && (
+                    {evaluation.achievement_standards.length > 2 && (
                       <div className="text-xs text-gray-500">
-                        외 {evaluation.evaluations.length - 3}개...
+                        외 {evaluation.achievement_standards.length - 2}개...
                       </div>
                     )}
+                  </div>
+                </div>
+              )}
+
+              {/* 평가방법 표시 */}
+              {evaluation.evaluation_methods && evaluation.evaluation_methods.length > 0 && (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Award className="h-4 w-4" />
+                    <span>평가방법</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {evaluation.evaluation_methods.slice(0, 3).map((method, index) => (
+                      <span key={index} className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                        {method}
+                      </span>
+                    ))}
+                    {evaluation.evaluation_methods.length > 3 && (
+                      <span className="text-xs text-gray-500">+{evaluation.evaluation_methods.length - 3}</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* AI 생성 대상 */}
+              {evaluation.ai_generation_targets && evaluation.ai_generation_targets.length > 0 && (
+                <div className="space-y-1">
+                  <div className="text-xs text-gray-500">AI 생성 대상:</div>
+                  <div className="flex flex-wrap gap-1">
+                    {evaluation.ai_generation_targets.map((target, index) => (
+                      <span key={index} className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                        {target}
+                      </span>
+                    ))}
                   </div>
                 </div>
               )}
               
               <div className="pt-2 border-t border-gray-100">
                 <p className="text-xs text-gray-500">
-                  생성일: {formatDate(evaluation.created_at || evaluation.createdAt || '')}
+                  생성일: {formatDate(evaluation.created_at)}
                 </p>
               </div>
 

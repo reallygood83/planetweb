@@ -8,7 +8,7 @@ import { EvaluationList } from '@/components/evaluation/EvaluationList'
 import { CreateEvaluationModal } from '@/components/evaluation/CreateEvaluationModal'
 import { SmartPasteModal } from '@/components/evaluation/SmartPasteModal'
 import { GenerateSurveyModal } from '@/components/evaluation/GenerateSurveyModal'
-import { EvaluationPlan } from '@/types'
+import { EvaluationPlan } from '@/lib/types/evaluation'
 import { Plus, FileText, Sparkles } from 'lucide-react'
 
 export default function EvaluationPage() {
@@ -45,7 +45,7 @@ export default function EvaluationPage() {
     }
   }
 
-  const handleCreateEvaluation = async (evaluationData: Omit<EvaluationPlan, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleCreateEvaluation = async (evaluationData: Omit<EvaluationPlan, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     try {
       const response = await fetch('/api/evaluations', {
         method: 'POST',

@@ -1,4 +1,4 @@
-// Evaluation types
+// Legacy evaluation types (deprecated - use @/lib/types/evaluation instead)
 export interface Evaluation {
   evaluationName: string
   unitName?: string
@@ -13,7 +13,8 @@ export interface Evaluation {
   evaluationPeriod: string
 }
 
-export interface EvaluationPlan {
+// Use @/lib/types/evaluation instead of this interface
+export interface LegacyEvaluationPlan {
   id?: string
   user_id?: string
   subject: string
@@ -66,7 +67,7 @@ export interface GenerationParams {
   activityType?: string
   observationNotes?: string
   selfEvaluation?: string
-  evaluationPlan?: EvaluationPlan
+  evaluationPlan?: LegacyEvaluationPlan
   yearSummary?: string
 }
 

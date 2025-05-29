@@ -43,17 +43,31 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { subject, grade, semester, evaluations = [] } = body
+    const { 
+      subject, 
+      grade, 
+      semester, 
+      unit,
+      lesson,
+      achievement_standards,
+      learning_objectives,
+      evaluation_methods,
+      evaluation_tools,
+      evaluation_criteria,
+      ai_generation_targets,
+      record_keywords,
+      special_notes
+    } = body
 
     // 필수 필드 검증
-    if (!subject || !grade || !semester) {
+    if (!subject || !grade || !semester || !unit) {
       return NextResponse.json(
-        { error: 'subject, grade, semester are required' }, 
+        { error: 'subject, grade, semester, unit are required' }, 
         { status: 400 }
       )
     }
 
-    // 평가계획 중복 확인 (같은 과목, 학년, 학기)
+    // 평가계획 중복 확인 (같은 과목, 학년, 학기, 단원)
     const { data: existingPlan } = await supabase
       .from('evaluation_plans')
       .select('id')
@@ -61,11 +75,12 @@ export async function POST(request: NextRequest) {
       .eq('subject', subject)
       .eq('grade', grade)
       .eq('semester', semester)
+      .eq('unit', unit)
       .single()
 
     if (existingPlan) {
       return NextResponse.json(
-        { error: 'Evaluation plan already exists for this subject, grade, and semester' }, 
+        { error: 'Evaluation plan already exists for this subject, grade, semester, and unit' }, 
         { status: 409 }
       )
     }
@@ -78,7 +93,21 @@ export async function POST(request: NextRequest) {
         subject,
         grade,
         semester,
-        evaluations
+        unit,
+        lesson,
+        achievement_standards: achievement_standards || [],
+        learning_objectives: learning_objectives || [],
+        evaluation_methods: evaluation_methods || [],
+        evaluation_tools: evaluation_tools || [],
+        evaluation_criteria: evaluation_criteria || {
+          excellent: { level: '매우잘함', description: '' },
+          good: { level: '잘함', description: '' },
+          satisfactory: { level: '보통', description: '' },
+          needs_improvement: { level: '노력요함', description: '' }
+        },
+        ai_generation_targets: ai_generation_targets || ['교과학습발달상황', '창의적 체험활동 누가기록', '행동특성 및 종합의견'],
+        record_keywords: record_keywords || [],
+        special_notes: special_notes || null
       }])
       .select()
       .single()

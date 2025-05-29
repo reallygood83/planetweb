@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { EvaluationPlan } from '@/types'
+import { EvaluationPlan } from '@/lib/types/evaluation'
 import { X, Sparkles } from 'lucide-react'
 
 interface SmartPasteModalProps {

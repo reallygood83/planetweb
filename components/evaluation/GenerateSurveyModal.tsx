@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { EvaluationPlan } from '@/types'
+import { EvaluationPlan } from '@/lib/types/evaluation'
 import { X, Sparkles, Loader2 } from 'lucide-react'
 
 interface GeneratedSurvey {
@@ -146,7 +146,7 @@ export function GenerateSurveyModal({
             {evaluationPlan.subject} • {evaluationPlan.grade} • {evaluationPlan.semester}
           </p>
           <p className="text-sm text-blue-700 mt-1">
-            평가 {evaluationPlan.evaluations.length}개
+            {evaluationPlan.unit} {evaluationPlan.lesson && `• ${evaluationPlan.lesson}`}
           </p>
         </div>
 
