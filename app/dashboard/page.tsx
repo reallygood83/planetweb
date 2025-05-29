@@ -79,9 +79,9 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">대시보드</h1>
+        <h1 className="text-3xl font-bold text-gray-900">아이빛 대시보드</h1>
         <p className="mt-2 text-sm text-gray-600">
-          생기부 AI 도우미에 오신 것을 환영합니다. 시작하려면 API 키를 설정해주세요.
+          학생 자기평가 기반 생기부 AI에 오신 것을 환영합니다. 시작하려면 API 키를 설정해주세요.
         </p>
       </div>
 
@@ -170,7 +170,7 @@ export default function DashboardPage() {
         <CardHeader>
           <CardTitle>시작하기</CardTitle>
           <CardDescription>
-            생기부 AI 도우미를 사용하는 방법
+            아이빛으로 학생 중심 생기부를 만드는 방법
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -191,9 +191,9 @@ export default function DashboardPage() {
                 2
               </span>
               <div>
-                <p className="font-medium">평가계획 등록</p>
+                <p className="font-medium">학급과 학생 등록</p>
                 <p className="text-sm text-gray-600">
-                  평가계획서를 붙여넣거나 직접 입력하여 등록하세요.
+                  담당 학급과 학생들을 등록하고 기본 정보를 설정하세요.
                 </p>
               </div>
             </li>
@@ -202,9 +202,9 @@ export default function DashboardPage() {
                 3
               </span>
               <div>
-                <p className="font-medium">학급 생성</p>
+                <p className="font-medium">자기평가 설문 생성</p>
                 <p className="text-sm text-gray-600">
-                  학급 정보와 학생 명단을 등록하세요. CSV 파일로도 가능합니다.
+                  AI가 교육과정에 맞는 학생 자기평가 설문을 자동으로 만들어줍니다.
                 </p>
               </div>
             </li>
@@ -213,9 +213,9 @@ export default function DashboardPage() {
                 4
               </span>
               <div>
-                <p className="font-medium">생기부 생성</p>
+                <p className="font-medium">맞춤형 생기부 생성</p>
                 <p className="text-sm text-gray-600">
-                  학생별 관찰 내용을 입력하고 AI로 생기부를 생성하세요.
+                  학생의 자기평가와 교사 관찰을 종합하여 개인별 생기부를 작성합니다.
                 </p>
               </div>
             </li>

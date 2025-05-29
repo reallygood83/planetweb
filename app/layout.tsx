@@ -6,8 +6,8 @@ import { AuthProvider } from "@/contexts/auth-context"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "생기부 AI 도우미",
-  description: "AI를 활용한 초등학교 생활기록부 작성 도우미",
+  title: "아이빛 - 학생 자기평가 기반 생기부 AI",
+  description: "학생들의 자기평가와 성찰을 바탕으로 AI가 개인 맞춤형 생활기록부를 작성해주는 교육 도우미",
 }
 
 export default function RootLayout({

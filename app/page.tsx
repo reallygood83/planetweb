@@ -8,7 +8,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex-shrink-0">
-              <h1 className="text-2xl font-bold text-slate-900">생기부 AI 도우미</h1>
+              <h1 className="text-2xl font-bold text-slate-900">아이빛</h1>
             </div>
             <div className="flex gap-4">
               <Link href="/auth/login" className="text-slate-600 hover:text-slate-900 font-medium">
@@ -27,12 +27,13 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center">
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight">
-              AI로 작성하는
-              <span className="block text-blue-600">초등학교 생활기록부</span>
+              학생 자기평가로 만드는
+              <span className="block text-blue-600">맞춤형 생활기록부</span>
             </h1>
             <p className="mt-6 max-w-2xl mx-auto text-xl text-slate-600">
-              개인 API 키로 안전하고 경제적으로 사용하세요.
-              NEIS 규정을 완벽하게 준수하는 AI 작성 도우미입니다.
+              학생들의 소중한 성찰과 자기평가를 바탕으로
+              <br />
+              AI가 개인별 특성을 살린 생기부를 작성해드립니다.
             </p>
             <div className="mt-10 flex gap-4 justify-center">
               <Link href="/auth/register" className="bg-blue-600 text-white text-lg px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg hover:shadow-xl">
@@ -52,9 +53,9 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">개인 API 키 사용</h3>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">학생 중심 설계</h3>
               <p className="text-slate-600">
-                사용자 개인의 Gemini API 키로 비용 부담 없이 안전하게 사용하세요.
+                학생들의 자기평가와 성찰 내용을 중심으로 개인별 특성을 반영합니다.
               </p>
             </div>
 
@@ -76,9 +77,9 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">교사 협업 지원</h3>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">맞춤형 AI 분석</h3>
               <p className="text-slate-600">
-                학교 코드로 평가계획과 자료를 동료 교사들과 공유할 수 있습니다.
+                개별 학생의 자기평가 패턴을 분석하여 개성 있는 생기부를 생성합니다.
               </p>
             </div>
           </div>
@@ -90,44 +91,44 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
-              강력한 기능들
+              학생 성장을 담는 특별한 기능들
             </h2>
             <p className="mt-4 text-xl text-slate-600">
-              생활기록부 작성을 쉽고 효율적으로 만들어주는 다양한 기능
+              학생들의 목소리와 성찰이 살아있는 생활기록부를 만들어주는 기능들
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
-                icon: "📋",
-                title: "평가계획 관리",
-                description: "기존 평가계획서를 붙여넣기하면 AI가 자동으로 분석하고 구조화합니다."
+                icon: "🎯",
+                title: "학생 자기평가 설문",
+                description: "학생들이 스스로의 성장과 노력을 돌아볼 수 있는 맞춤형 설문을 AI가 생성합니다."
               },
               {
-                icon: "🤖",
-                title: "AI 콘텐츠 생성",
-                description: "교과학습발달상황, 창의적체험활동, 행동특성 등을 AI가 작성합니다."
+                icon: "💭",
+                title: "성찰 기반 AI 분석",
+                description: "학생들의 자기평가 내용을 분석하여 개별 특성과 성장 포인트를 찾아냅니다."
               },
               {
-                icon: "👨‍👩‍👧‍👦",
-                title: "학급 관리",
-                description: "학급별 학생 명단을 관리하고 CSV 파일로 일괄 등록할 수 있습니다."
+                icon: "📝",
+                title: "개인 맞춤 생기부",
+                description: "각 학생의 자기평가를 바탕으로 개성 있고 진정성 있는 생기부를 작성합니다."
+              },
+              {
+                icon: "🌱",
+                title: "성장 스토리 생성",
+                description: "학생의 변화와 발전 과정을 자기평가 결과로부터 스토리텔링합니다."
               },
               {
                 icon: "📊",
-                title: "설문 시스템",
-                description: "학생 자기평가 설문을 AI로 생성하고 응답을 자동으로 수집합니다."
+                title: "평가 데이터 분석",
+                description: "학생들의 자기평가 패턴을 분석하여 교육적 인사이트를 제공합니다."
               },
               {
-                icon: "⚡",
-                title: "일괄 생성",
-                description: "한 학급 전체의 생기부를 한 번에 생성하고 다양한 형식으로 내보냅니다."
-              },
-              {
-                icon: "🏫",
-                title: "학교 코드",
-                description: "6자리 코드로 교사 그룹을 만들고 평가계획을 공유합니다."
+                icon: "🤝",
+                title: "교사-학생 연결",
+                description: "학생의 목소리가 교사의 관찰과 조화롭게 어우러진 기록을 만듭니다."
               }
             ].map((feature, index) => (
               <div key={index} className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
@@ -153,23 +154,23 @@ export default function Home() {
             {[
               {
                 step: "1",
-                title: "회원가입 및 로그인",
-                description: "Google 계정으로 간편하게 시작하세요."
+                title: "학급과 학생 등록",
+                description: "담당 학급과 학생들을 등록하고 기본 정보를 설정합니다."
               },
               {
                 step: "2",
-                title: "Gemini API 키 설정",
-                description: "Google AI Studio에서 무료 API 키를 발급받아 입력하세요."
+                title: "자기평가 설문 생성",
+                description: "AI가 교육과정에 맞는 학생 자기평가 설문을 자동으로 생성합니다."
               },
               {
                 step: "3",
-                title: "평가계획 및 학급 설정",
-                description: "평가계획을 등록하고 학급 정보를 입력합니다."
+                title: "학생 자기평가 수집",
+                description: "학생들이 온라인으로 자기평가를 작성하면 자동으로 수집됩니다."
               },
               {
                 step: "4",
-                title: "AI로 생기부 작성",
-                description: "학생별 관찰 내용을 입력하면 AI가 생기부를 작성합니다."
+                title: "맞춤형 생기부 생성",
+                description: "학생의 자기평가와 교사 관찰을 종합하여 개인별 생기부를 작성합니다."
               }
             ].map((item, index) => (
               <div key={index} className="flex gap-6">
@@ -200,10 +201,10 @@ export default function Home() {
       <section className="py-20 bg-blue-600">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            지금 바로 시작하세요
+            학생들의 목소리를 담은 생기부를 만들어보세요
           </h2>
           <p className="text-xl text-blue-100 mb-8">
-            개인 API 키로 비용 걱정 없이 생기부 작성을 시작하세요.
+            학생 자기평가 중심의 새로운 생활기록부 작성을 지금 시작하세요.
           </p>
           <Link href="/auth/register" className="inline-block bg-white text-blue-600 text-lg px-8 py-3 rounded-lg hover:bg-blue-50 transition-colors font-medium shadow-lg">
             무료로 시작하기
@@ -214,7 +215,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="py-8 bg-slate-900 text-slate-400">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p>&copy; 2024 생기부 AI 도우미. All rights reserved.</p>
+          <p>&copy; 2024 아이빛 - 학생 자기평가 기반 생기부 AI. All rights reserved.</p>
         </div>
       </footer>
     </div>
