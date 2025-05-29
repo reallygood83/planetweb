@@ -103,15 +103,8 @@ export default function GeneratePage() {
 
       if (data.success) {
         alert('설문이 저장되었습니다!')
-        setGeneratedSurvey(null)
-        // Reset form
-        setSubject('')
-        setGrade('')
-        setSemester('')
-        setUnit('')
-        setLearningObjectives('')
-        setAchievementStandards('')
-        setEvaluationCriteria('')
+        // Redirect to surveys management page
+        window.location.href = '/dashboard/surveys'
       } else {
         alert('설문 저장에 실패했습니다: ' + (data.error || '알 수 없는 오류'))
       }
