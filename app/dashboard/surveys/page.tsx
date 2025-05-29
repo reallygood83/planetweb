@@ -128,6 +128,10 @@ export default function SurveysPage() {
   }
 
   const handleCopyStudentLink = (classInfo: ClassInfo) => {
+    if (!classInfo.school_code) {
+      alert('이 학급에는 아직 학급 코드가 없습니다. 학급을 다시 생성하거나 관리자에게 문의하세요.')
+      return
+    }
     const studentUrl = `${window.location.origin}/student/surveys?code=${classInfo.school_code}`
     navigator.clipboard.writeText(studentUrl)
     alert(`학생 접속 링크가 복사되었습니다!\n\n학급 코드: ${classInfo.school_code}\n링크: ${studentUrl}`)
