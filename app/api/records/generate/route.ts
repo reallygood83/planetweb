@@ -67,11 +67,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Response not found' }, { status: 404 })
     }
 
-    // API 키 설정
-    const apiKey = process.env.GEMINI_API_KEY || ''
+    // 사용자의 API 키 조회
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('api_key_hint')
+      .eq('id', user.id)
+      .single()
+
+    // 사용자 API 키가 있으면 사용, 없으면 환경 변수 사용
+    let apiKey = ''
+    if (profile?.api_key_hint) {
+      // TODO: 실제 구현시 암호화된 API 키를 복호화해야 함
+      apiKey = profile.api_key_hint
+    } else {
+      apiKey = process.env.GEMINI_API_KEY || ''
+    }
 
     if (!apiKey) {
-      return NextResponse.json({ error: 'API key not configured' }, { status: 400 })
+      return NextResponse.json({ 
+        success: false, 
+        error: 'API key not configured. Please set your API key in the dashboard.' 
+      }, { status: 400 })
     }
 
     // 프롬프트 생성

@@ -34,13 +34,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Use fallback API key for now (in production, decrypt user's API key)
-    const apiKey = process.env.GEMINI_API_KEY
+    // 사용자의 API 키 조회
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('api_key_hint')
+      .eq('id', user.id)
+      .single()
+
+    // 사용자 API 키가 있으면 사용, 없으면 환경 변수 사용
+    let apiKey = ''
+    if (profile?.api_key_hint) {
+      // TODO: 실제 구현시 암호화된 API 키를 복호화해야 함
+      // 현재는 임시로 힌트를 그대로 사용 (보안상 좋지 않음)
+      apiKey = profile.api_key_hint
+    } else {
+      apiKey = process.env.GEMINI_API_KEY || ''
+    }
 
     if (!apiKey) {
-      console.log('API key not configured - GEMINI_API_KEY environment variable is missing')
+      console.log('API key not configured')
       return NextResponse.json(
-        { success: false, error: 'API key not configured. Please set GEMINI_API_KEY environment variable.' }, 
+        { success: false, error: 'API key not configured. Please set your API key in the dashboard.' }, 
         { status: 400 }
       )
     }
