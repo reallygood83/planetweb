@@ -147,7 +147,7 @@ export default function GenerateBatchPage() {
       }))
 
       try {
-        const response = await fetch('/api/records/generate', {
+        const response = await fetch('/api/records/generate-simple', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

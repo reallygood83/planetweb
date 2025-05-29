@@ -67,12 +67,17 @@ export default function SurveysPage() {
       const response = await fetch('/api/surveys')
       if (response.ok) {
         const data = await response.json()
-        if (data.success) {
+        if (data.success && Array.isArray(data.data)) {
           setSurveys(data.data)
+        } else {
+          setSurveys([])
         }
+      } else {
+        setSurveys([])
       }
     } catch (error) {
       console.error('Error fetching surveys:', error)
+      setSurveys([])
     } finally {
       setIsLoading(false)
     }
@@ -83,12 +88,22 @@ export default function SurveysPage() {
       const response = await fetch('/api/classes')
       if (response.ok) {
         const data = await response.json()
-        if (data.success) {
-          setClasses(data.data)
+        if (data.success && Array.isArray(data.data)) {
+          // students 배열이 없는 경우 빈 배열로 초기화
+          const validClasses = data.data.map((cls: any) => ({
+            ...cls,
+            students: Array.isArray(cls.students) ? cls.students : []
+          }))
+          setClasses(validClasses)
+        } else {
+          setClasses([])
         }
+      } else {
+        setClasses([])
       }
     } catch (error) {
       console.error('Error fetching classes:', error)
+      setClasses([])
     }
   }
 
@@ -183,7 +198,7 @@ export default function SurveysPage() {
                   <div>
                     <div className="font-medium">{classInfo.name}</div>
                     <div className="text-sm text-gray-500">
-                      학급 코드: {classInfo.school_code} | 학생 수: {classInfo.students.length}명
+                      학급 코드: {classInfo.school_code} | 학생 수: {(classInfo.students || []).length}명
                     </div>
                   </div>
                   <div className="flex gap-2">

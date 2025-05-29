@@ -143,11 +143,15 @@ export default function GenerateRecordPage() {
   }, [selectedStudent, selectedClass, fetchStudentResponses])
 
   const handleGenerateContent = async () => {
-    if (!selectedStudent || !selectedClass) return
+    if (!selectedStudent || !selectedClass || !teacherNotes.trim()) {
+      alert('필수 정보를 모두 입력해주세요.')
+      return
+    }
 
     setIsGenerating(true)
     try {
-      const response = await fetch('/api/records/generate', {
+      // 간단한 API 사용 (Supabase 연결 없이도 동작)
+      const response = await fetch('/api/records/generate-simple', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -156,12 +160,10 @@ export default function GenerateRecordPage() {
           studentName: selectedStudent.name,
           className: selectedClass.name,
           recordType,
-          responseId: selectedResponse?.id,
+          subject: recordType === '교과학습발달상황' ? 
+            (selectedResponse?.survey.evaluation_plans?.subject || '전과목') : undefined,
           teacherNotes,
-          additionalContext,
-          subject: selectedResponse?.survey.evaluation_plans?.subject,
-          unit: selectedResponse?.survey.evaluation_plans?.unit,
-          responses: selectedResponse?.responses
+          additionalContext
         })
       })
 
@@ -170,10 +172,10 @@ export default function GenerateRecordPage() {
       if (data.success) {
         setGeneratedContent({
           content: data.content,
-          characterCount: data.characterCount || 0,
+          characterCount: data.validation?.characterCount || data.content.length,
           isValid: data.validation?.isValid || false,
-          warnings: data.validation?.warnings || [],
-          errors: data.validation?.errors || []
+          warnings: data.validation?.issues?.filter((issue: string) => !issue.includes('초과')) || [],
+          errors: data.validation?.issues?.filter((issue: string) => issue.includes('초과')) || []
         })
         setCurrentStep(5) // Move to final step
       } else {
