@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Class, Student } from '@/types'
-import { X, Plus, Trash2 } from 'lucide-react'
+import { X, Plus, Trash2, Upload } from 'lucide-react'
 
 interface CreateClassModalProps {
   open: boolean
@@ -76,6 +76,43 @@ export function CreateClassModal({ open, onOpenChange, onSubmit }: CreateClassMo
     setNewStudent({ ...newStudent, number })
   }
 
+  const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const text = event.target?.result as string
+      const lines = text.split('\n').filter(line => line.trim())
+      
+      // CSV 파싱 (첫 줄은 헤더로 가정)
+      const newStudents: Student[] = []
+      for (let i = 1; i < lines.length; i++) {
+        const [numberStr, name] = lines[i].split(',').map(s => s.trim())
+        const number = parseInt(numberStr)
+        
+        if (number && name) {
+          newStudents.push({ number, name })
+        }
+      }
+      
+      if (newStudents.length > 0) {
+        setStudents(newStudents.sort((a, b) => a.number - b.number))
+        setNewStudent({ 
+          number: Math.max(...newStudents.map(s => s.number)) + 1, 
+          name: '' 
+        })
+        alert(`${newStudents.length}명의 학생이 추가되었습니다.`)
+      } else {
+        alert('CSV 파일에서 학생 정보를 찾을 수 없습니다.')
+      }
+    }
+    
+    reader.readAsText(file, 'UTF-8')
+    // 파일 입력 초기화
+    e.target.value = ''
+  }
+
   if (!open) return null
 
   return (
@@ -144,7 +181,42 @@ export function CreateClassModal({ open, onOpenChange, onSubmit }: CreateClassMo
 
           {/* 학생 추가 */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">학생 명단</h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">학생 명단</h3>
+              <div className="flex gap-2">
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleCSVUpload}
+                  className="hidden"
+                  id="csv-upload"
+                />
+                <Label
+                  htmlFor="csv-upload"
+                  className="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 text-sm border rounded-md hover:bg-gray-50"
+                >
+                  <Upload className="h-4 w-4" />
+                  CSV 업로드
+                </Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const sampleCSV = '번호,이름\n1,김민준\n2,이서연\n3,박지호'
+                    const blob = new Blob([sampleCSV], { type: 'text/csv' })
+                    const url = URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.href = url
+                    a.download = '학생명단_샘플.csv'
+                    a.click()
+                    URL.revokeObjectURL(url)
+                  }}
+                >
+                  샘플 다운로드
+                </Button>
+              </div>
+            </div>
             
             <div className="flex gap-2">
               <div className="w-20">

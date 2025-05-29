@@ -37,6 +37,7 @@ export default function DashboardLayout({
     { name: '대시보드', href: '/dashboard' },
     { name: '평가계획', href: '/dashboard/evaluation' },
     { name: '학급관리', href: '/dashboard/class' },
+    { name: '학교코드', href: '/dashboard/school-code' },
     { name: '설문생성', href: '/dashboard/generate' },
     { name: '설문관리', href: '/dashboard/surveys' },
     { name: '학생평가현황', href: '/dashboard/student-evaluation' },
