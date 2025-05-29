@@ -41,6 +41,7 @@ export interface Class {
   semester: string
   teacher?: string
   students: Student[]
+  school_code?: string
   created_at: string
   updated_at: string
 }

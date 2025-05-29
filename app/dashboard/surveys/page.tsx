@@ -43,8 +43,8 @@ interface Survey {
 
 interface ClassInfo {
   id: string
-  name: string
-  school_code: string
+  class_name: string
+  school_code?: string
   students: Array<{ number: number; name: string }>
 }
 
@@ -196,9 +196,9 @@ export default function SurveysPage() {
               {classes.map((classInfo) => (
                 <div key={classInfo.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <div className="font-medium">{classInfo.name}</div>
+                    <div className="font-medium">{classInfo.class_name}</div>
                     <div className="text-sm text-gray-500">
-                      학급 코드: {classInfo.school_code} | 학생 수: {(classInfo.students || []).length}명
+                      {classInfo.school_code ? `학급 코드: ${classInfo.school_code} | ` : ''}학생 수: {(classInfo.students || []).length}명
                     </div>
                   </div>
                   <div className="flex gap-2">

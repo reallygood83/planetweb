@@ -50,9 +50,16 @@ export function ClassList({ classes, onEdit, onDelete }: ClassListProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Users className="h-4 w-4" />
-                <span>학생 {classData.students?.length || 0}명</span>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Users className="h-4 w-4" />
+                  <span>학생 {classData.students?.length || 0}명</span>
+                </div>
+                {classData.school_code && (
+                  <div className="text-sm text-gray-600">
+                    <span className="font-medium">학급 코드:</span> {classData.school_code}
+                  </div>
+                )}
               </div>
               
               {classData.students && classData.students.length > 0 && (
