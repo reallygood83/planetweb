@@ -62,19 +62,26 @@ export async function POST(request: NextRequest) {
     console.log('Fetching user profile for API key...')
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('api_key_hint')
+      .select('api_key_hint, encrypted_api_key')
       .eq('id', user.id)
       .single()
 
-    console.log('Profile fetch result:', { profile, profileError })
+    console.log('Profile fetch result:', { profile: profile ? { has_hint: !!profile.api_key_hint, has_encrypted: !!profile.encrypted_api_key } : null, profileError })
 
     // 사용자 API 키가 있으면 사용, 없으면 환경 변수 사용
     let apiKey = ''
-    if (profile?.api_key_hint) {
-      // TODO: 실제 구현시 암호화된 API 키를 복호화해야 함
-      // 현재는 임시로 힌트를 그대로 사용 (보안상 좋지 않음)
-      apiKey = profile.api_key_hint
-      console.log('Using user API key (hint):', `${apiKey.substring(0, 10)}...`)
+    if (profile?.encrypted_api_key) {
+      // 암호화된 API 키를 복호화
+      try {
+        const { decryptApiKey } = await import('@/lib/utils')
+        const encryptKey = process.env.ENCRYPT_KEY || 'default-key'
+        apiKey = decryptApiKey(profile.encrypted_api_key, encryptKey)
+        console.log('Using user API key (decrypted):', `${apiKey.substring(0, 10)}...`)
+      } catch (decryptError) {
+        console.log('Failed to decrypt user API key:', decryptError)
+        apiKey = process.env.GEMINI_API_KEY || ''
+        console.log('Fallback to environment API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NOT SET')
+      }
     } else {
       apiKey = process.env.GEMINI_API_KEY || ''
       console.log('Using environment API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NOT SET')

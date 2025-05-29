@@ -84,12 +84,15 @@ export default function DashboardPage() {
       const hint = getApiKeyHint(apiKey)
       localStorage.setItem('api_key_hint', hint)
 
-      // Update user profile with hint
+      // Update user profile with encrypted key and hint
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         await supabase
           .from('profiles')
-          .update({ api_key_hint: hint })
+          .update({ 
+            api_key_hint: hint,
+            encrypted_api_key: encrypted 
+          })
           .eq('id', user.id)
       }
 
