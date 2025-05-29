@@ -1,13 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { evaluationPlan, apiKey } = body
+    const supabase = await createClient()
+    
+    // Check authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
 
-    if (!evaluationPlan || !apiKey) {
+    const body = await request.json()
+    const { 
+      subject, 
+      grade, 
+      semester, 
+      unit,
+      learningObjectives,
+      achievementStandards,
+      evaluationCriteria
+    } = body
+
+    if (!subject || !grade || !unit) {
       return NextResponse.json(
-        { error: 'evaluationPlan and apiKey are required' }, 
+        { success: false, error: 'subject, grade, and unit are required' }, 
+        { status: 400 }
+      )
+    }
+
+    // Get user's API key
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('api_key_hint')
+      .eq('id', user.id)
+      .single()
+
+    // Use fallback API key for now (in production, decrypt user's API key)
+    const apiKey = process.env.GEMINI_API_KEY
+
+    if (!apiKey) {
+      return NextResponse.json(
+        { success: false, error: 'API key not configured' }, 
         { status: 400 }
       )
     }
@@ -17,10 +51,13 @@ export async function POST(request: NextRequest) {
 다음 평가계획을 바탕으로 초등학생이 답변할 수 있는 자기평가 설문을 생성해주세요.
 
 평가계획 정보:
-- 과목: ${evaluationPlan.subject}
-- 학년: ${evaluationPlan.grade}
-- 학기: ${evaluationPlan.semester}
-- 평가 내용: ${JSON.stringify(evaluationPlan.evaluations, null, 2)}
+- 과목: ${subject}
+- 학년: ${grade}
+- 학기: ${semester}
+- 단원: ${unit}
+- 학습목표: ${learningObjectives || ''}
+- 성취기준: ${achievementStandards || ''}
+- 평가기준: ${evaluationCriteria || ''}
 
 설문 생성 가이드라인:
 1. 객관식 3문항 + 주관식 2문항으로 구성
@@ -32,21 +69,18 @@ export async function POST(request: NextRequest) {
 다음 JSON 형식으로 응답해주세요:
 {
   "title": "설문 제목",
-  "questions": {
-    "multipleChoice": [
-      {
-        "question": "질문 내용",
-        "options": ["선택지1", "선택지2", "선택지3", "선택지4"],
-        "guideline": "답변 가이드 (선택사항)"
-      }
-    ],
-    "shortAnswer": [
-      {
-        "question": "주관식 질문 내용",
-        "guideline": "답변 가이드 (선택사항)"
-      }
-    ]
-  }
+  "description": "설문 설명",
+  "questions": [
+    {
+      "type": "multiple_choice",
+      "question": "질문 내용",
+      "options": ["선택지1", "선택지2", "선택지3", "선택지4"]
+    },
+    {
+      "type": "short_answer", 
+      "question": "주관식 질문 내용"
+    }
+  ]
 }
 
 주의사항:
@@ -117,7 +151,7 @@ export async function POST(request: NextRequest) {
       const parsedData = JSON.parse(jsonMatch[1] || jsonMatch[0])
       
       // 기본 구조 검증
-      if (!parsedData.title || !parsedData.questions) {
+      if (!parsedData.title || !parsedData.questions || !Array.isArray(parsedData.questions)) {
         throw new Error('Invalid survey structure')
       }
 

@@ -1,0 +1,182 @@
+-- Supabase 프로덕션 데이터베이스 업데이트
+-- 기존 데이터를 보존하면서 새로운 스키마 적용
+
+-- 1. 기존 evaluation_plans 테이블에 새 컬럼 추가 (이미 있으면 무시)
+ALTER TABLE evaluation_plans 
+ADD COLUMN IF NOT EXISTS unit TEXT,
+ADD COLUMN IF NOT EXISTS lesson TEXT,
+ADD COLUMN IF NOT EXISTS achievement_standards JSONB DEFAULT '[]'::jsonb,
+ADD COLUMN IF NOT EXISTS learning_objectives TEXT[] DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS evaluation_methods TEXT[] DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS evaluation_tools TEXT[] DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS evaluation_criteria JSONB DEFAULT '{
+    "excellent": {"level": "매우잘함", "description": ""},
+    "good": {"level": "잘함", "description": ""},
+    "satisfactory": {"level": "보통", "description": ""},
+    "needs_improvement": {"level": "노력요함", "description": ""}
+}'::jsonb,
+ADD COLUMN IF NOT EXISTS ai_generation_targets TEXT[] DEFAULT '{"교과학습발달상황", "창의적 체험활동 누가기록", "행동특성 및 종합의견"}',
+ADD COLUMN IF NOT EXISTS record_keywords TEXT[] DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS special_notes TEXT;
+
+-- 2. 기존 데이터에 기본값 설정 (unit이 NULL인 경우)
+UPDATE evaluation_plans 
+SET unit = '기본 단원' 
+WHERE unit IS NULL;
+
+-- 3. unit을 NOT NULL로 변경
+ALTER TABLE evaluation_plans 
+ALTER COLUMN unit SET NOT NULL;
+
+-- 4. 인덱스 추가 (이미 있으면 무시)
+CREATE INDEX IF NOT EXISTS idx_evaluation_plans_subject ON evaluation_plans(subject);
+CREATE INDEX IF NOT EXISTS idx_evaluation_plans_grade_semester ON evaluation_plans(grade, semester);
+
+-- 5. 기본 평가방법/도구 설정 (비어있는 경우)
+UPDATE evaluation_plans 
+SET evaluation_methods = '{"관찰평가"}' 
+WHERE evaluation_methods = '{}' OR evaluation_methods IS NULL;
+
+UPDATE evaluation_plans 
+SET evaluation_tools = '{"체크리스트"}' 
+WHERE evaluation_tools = '{}' OR evaluation_tools IS NULL;
+
+-- 6. 새로운 테이블 생성 (과목별 평가계획)
+CREATE TABLE IF NOT EXISTS subject_evaluation_plans (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    
+    -- 기본 정보
+    subject TEXT NOT NULL,              -- 과목
+    grade TEXT NOT NULL,                -- 학년
+    semester TEXT NOT NULL,             -- 학기
+    school_year INTEGER NOT NULL DEFAULT EXTRACT(YEAR FROM CURRENT_DATE), -- 학년도
+    
+    -- 메타데이터
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+    
+    -- 복합 유니크 키: 같은 학년도-학기-과목-학년은 하나만
+    UNIQUE(user_id, school_year, semester, subject, grade)
+);
+
+-- 7. 개별 평가 테이블 생성
+CREATE TABLE IF NOT EXISTS individual_evaluations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    plan_id UUID NOT NULL REFERENCES subject_evaluation_plans(id) ON DELETE CASCADE,
+    
+    -- 평가 정보
+    evaluation_name TEXT NOT NULL,       -- 평가명 (예: "분수의 덧셈과 뺄셈")
+    unit TEXT NOT NULL,                  -- 단원
+    lesson TEXT,                         -- 차시
+    evaluation_period TEXT,              -- 평가시기 (예: "3월 2주")
+    
+    -- 성취기준
+    achievement_standards JSONB NOT NULL DEFAULT '[]'::jsonb,  -- [{code: "[6수03-01]", content: "..."}]
+    
+    -- 평가방법 및 도구
+    evaluation_methods TEXT[] NOT NULL DEFAULT '{}',   -- ["관찰평가", "포트폴리오"]
+    evaluation_tools TEXT[] NOT NULL DEFAULT '{}',     -- ["체크리스트", "루브릭"]
+    
+    -- 4단계 평가기준
+    evaluation_criteria JSONB NOT NULL DEFAULT '{
+        "excellent": {"level": "매우잘함", "description": ""},
+        "good": {"level": "잘함", "description": ""},
+        "satisfactory": {"level": "보통", "description": ""},
+        "needs_improvement": {"level": "노력요함", "description": ""}
+    }'::jsonb,
+    
+    -- 가중치 (선택사항)
+    weight INTEGER DEFAULT 100,          -- 평가 비중 (%)
+    
+    -- 메타데이터
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- 8. 인덱스 생성
+CREATE INDEX IF NOT EXISTS idx_subject_evaluation_plans_user_id ON subject_evaluation_plans(user_id);
+CREATE INDEX IF NOT EXISTS idx_subject_evaluation_plans_subject ON subject_evaluation_plans(subject);
+CREATE INDEX IF NOT EXISTS idx_individual_evaluations_plan_id ON individual_evaluations(plan_id);
+
+-- 9. RLS 정책 - subject_evaluation_plans
+ALTER TABLE subject_evaluation_plans ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own subject plans" ON subject_evaluation_plans
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create own subject plans" ON subject_evaluation_plans
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own subject plans" ON subject_evaluation_plans
+    FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own subject plans" ON subject_evaluation_plans
+    FOR DELETE USING (auth.uid() = user_id);
+
+-- 10. RLS 정책 - individual_evaluations
+ALTER TABLE individual_evaluations ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own evaluations" ON individual_evaluations
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM subject_evaluation_plans
+            WHERE subject_evaluation_plans.id = individual_evaluations.plan_id
+            AND subject_evaluation_plans.user_id = auth.uid()
+        )
+    );
+
+CREATE POLICY "Users can create evaluations" ON individual_evaluations
+    FOR INSERT WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM subject_evaluation_plans
+            WHERE subject_evaluation_plans.id = individual_evaluations.plan_id
+            AND subject_evaluation_plans.user_id = auth.uid()
+        )
+    );
+
+CREATE POLICY "Users can update evaluations" ON individual_evaluations
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM subject_evaluation_plans
+            WHERE subject_evaluation_plans.id = individual_evaluations.plan_id
+            AND subject_evaluation_plans.user_id = auth.uid()
+        )
+    );
+
+CREATE POLICY "Users can delete evaluations" ON individual_evaluations
+    FOR DELETE USING (
+        EXISTS (
+            SELECT 1 FROM subject_evaluation_plans
+            WHERE subject_evaluation_plans.id = individual_evaluations.plan_id
+            AND subject_evaluation_plans.user_id = auth.uid()
+        )
+    );
+
+-- 11. 트리거 생성 (이미 있으면 무시)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_subject_evaluation_plans_updated_at') THEN
+        CREATE TRIGGER update_subject_evaluation_plans_updated_at BEFORE UPDATE ON subject_evaluation_plans
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_individual_evaluations_updated_at') THEN
+        CREATE TRIGGER update_individual_evaluations_updated_at BEFORE UPDATE ON individual_evaluations
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+END $$;
+
+-- 12. surveys 테이블 업데이트
+ALTER TABLE surveys 
+ADD COLUMN IF NOT EXISTS individual_evaluation_id UUID REFERENCES individual_evaluations(id) ON DELETE SET NULL;
+
+-- 13. survey_responses 테이블에 class_id 컬럼 추가
+ALTER TABLE survey_responses
+ADD COLUMN IF NOT EXISTS class_id UUID REFERENCES classes(id) ON DELETE CASCADE;
+
+-- 완료 메시지
+DO $$
+BEGIN
+    RAISE NOTICE '✅ 데이터베이스 업데이트 완료!';
+END $$;

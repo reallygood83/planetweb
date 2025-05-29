@@ -38,6 +38,8 @@ export default function DashboardLayout({
     { name: '평가계획', href: '/dashboard/evaluation' },
     { name: '학급관리', href: '/dashboard/class' },
     { name: '콘텐츠 생성', href: '/dashboard/generate' },
+    { name: '학생응답', href: '/dashboard/responses' },
+    { name: '생기부관리', href: '/dashboard/records' },
   ]
 
   return (
