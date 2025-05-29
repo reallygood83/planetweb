@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 
 // NEIS 생기부 작성 규칙
 const NEIS_RULES = {
@@ -68,23 +67,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Response not found' }, { status: 404 })
     }
 
-    // API 키 조회
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('api_key_hint')
-      .eq('id', user.id)
-      .single()
-
-    // 암호화된 API 키 복호화 (실제 구현 시 별도 암호화 서비스 필요)
+    // API 키 설정
     const apiKey = process.env.GEMINI_API_KEY || ''
 
     if (!apiKey) {
       return NextResponse.json({ error: 'API key not configured' }, { status: 400 })
     }
-
-    // Gemini AI 초기화
-    const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' })
 
     // 프롬프트 생성
     const prompt = createRecordPrompt({
@@ -95,9 +83,53 @@ export async function POST(request: NextRequest) {
       neisRules: NEIS_RULES
     })
 
-    // AI 생성
-    const result = await model.generateContent(prompt)
-    const generatedText = result.response.text()
+    // Gemini API 호출
+    const geminiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt
+                }
+              ]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 32,
+            topP: 1,
+            maxOutputTokens: 2048,
+          }
+        })
+      }
+    )
+
+    if (!geminiResponse.ok) {
+      const errorData = await geminiResponse.text()
+      console.error('Gemini API Error:', errorData)
+      return NextResponse.json(
+        { error: 'Failed to generate record' }, 
+        { status: 500 }
+      )
+    }
+
+    const geminiData = await geminiResponse.json()
+    
+    if (!geminiData.candidates || !geminiData.candidates[0]?.content?.parts?.[0]?.text) {
+      return NextResponse.json(
+        { error: 'Invalid response from AI' }, 
+        { status: 500 }
+      )
+    }
+
+    const generatedText = geminiData.candidates[0].content.parts[0].text
 
     // NEIS 규정 검증
     const validation = validateNEISCompliance(generatedText, responseData.student_name)
@@ -109,37 +141,12 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // 생성된 내용 저장
-    const { data: savedRecord, error: saveError } = await supabase
-      .from('generated_contents')
-      .insert({
-        user_id: user.id,
-        student_name: responseData.student_name,
-        class_name: responseData.class_name,
-        content_type: recordType,
-        content: generatedText,
-        metadata: {
-          response_id: responseId,
-          subject: responseData.surveys.evaluation_plans?.subject,
-          unit: responseData.surveys.evaluation_plans?.unit,
-          character_count: generatedText.length,
-          validation: validation
-        }
-      })
-      .select()
-      .single()
-
-    if (saveError) {
-      console.error('Error saving record:', saveError)
-      return NextResponse.json({ error: 'Failed to save generated record' }, { status: 500 })
-    }
-
     return NextResponse.json({ 
       success: true, 
       data: {
-        id: savedRecord.id,
         content: generatedText,
-        metadata: savedRecord.metadata
+        validation: validation,
+        characterCount: generatedText.length
       }
     })
   } catch (error) {

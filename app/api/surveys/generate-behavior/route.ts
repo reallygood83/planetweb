@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 선택된 핵심 인성 요소들의 정보 수집
-    const selectedValueDetails = selectedValues.map((id: string) => CORE_VALUES[id as keyof typeof CORE_VALUES]).filter(Boolean)
+    const selectedValueDetails = selectedValues.map((id: string) => CORE_VALUES[id as keyof typeof CORE_VALUES]).filter(Boolean) as Array<{name: string, description: string, examples: string[]}>
 
     // AI 프롬프트 생성
     const prompt = `

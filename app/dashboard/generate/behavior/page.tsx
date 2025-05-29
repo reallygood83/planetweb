@@ -320,7 +320,7 @@ export default function BehaviorSurveyPage() {
               <div className="text-center py-8 text-gray-500">
                 <Heart className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                 <p>핵심 인성 요소를 선택하고</p>
-                <p>'설문 생성하기'를 클릭하세요.</p>
+                <p>&apos;설문 생성하기&apos;를 클릭하세요.</p>
               </div>
             ) : (
               <div className="space-y-4">

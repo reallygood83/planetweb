@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { Sparkles, FileText, Users, BookOpen, Target } from 'lucide-react'
 
 export default function GeneratePage() {
-  const { user } = useAuth()
+  const {} = useAuth()
   const [subject, setSubject] = useState('')
   const [grade, setGrade] = useState('')
   const [semester, setSemester] = useState('')
@@ -267,7 +267,7 @@ export default function GeneratePage() {
           <CardContent>
             {!generatedSurvey ? (
               <div className="text-center py-8 text-gray-500">
-                평가계획을 입력하고 '설문 생성하기'를 클릭하세요.
+                평가계획을 입력하고 &apos;설문 생성하기&apos;를 클릭하세요.
               </div>
             ) : (
               <div className="space-y-4">

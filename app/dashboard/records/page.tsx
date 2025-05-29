@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/auth-context'
-import { FileText, Download, Calendar, User, BookOpen, Copy, Check } from 'lucide-react'
+import { FileText, Download, Calendar, Copy, Check } from 'lucide-react'
 
 interface GeneratedRecord {
   id: string

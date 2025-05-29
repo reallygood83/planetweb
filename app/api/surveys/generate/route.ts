@@ -29,13 +29,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get user's API key
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('api_key_hint')
-      .eq('id', user.id)
-      .single()
-
     // Use fallback API key for now (in production, decrypt user's API key)
     const apiKey = process.env.GEMINI_API_KEY
 

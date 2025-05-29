@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/auth-context'
-import { Users, FileText, Calendar, CheckCircle, XCircle, Sparkles } from 'lucide-react'
+import { Users, FileText, Calendar, CheckCircle, Sparkles } from 'lucide-react'
 import { GenerateRecordModal } from '@/components/records/GenerateRecordModal'
 
 interface SurveyResponse {
