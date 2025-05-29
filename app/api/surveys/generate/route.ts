@@ -11,7 +11,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
+    let body: any
+    try {
+      const rawBody = await request.text()
+      console.log('Raw request body:', rawBody)
+      body = JSON.parse(rawBody)
+    } catch (parseError) {
+      console.error('Body parsing error:', parseError)
+      return NextResponse.json({ success: false, error: 'Invalid JSON in request body' }, { status: 400 })
+    }
+    
     console.log('Survey generate request body:', JSON.stringify(body, null, 2))
     
     const { 

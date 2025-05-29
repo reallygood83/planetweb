@@ -15,6 +15,9 @@ export default function GeneratePage() {
   const [grade, setGrade] = useState('')
   const [semester, setSemester] = useState('')
   const [unit, setUnit] = useState('')
+  
+  // 디버깅용: 상태 변경 추적
+  console.log('Current state:', { subject, grade, semester, unit })
   const [learningObjectives, setLearningObjectives] = useState('')
   const [achievementStandards, setAchievementStandards] = useState('')
   const [evaluationCriteria, setEvaluationCriteria] = useState('')
@@ -52,6 +55,7 @@ export default function GeneratePage() {
       }
       
       console.log('Request body:', requestBody)
+      console.log('Request body JSON:', JSON.stringify(requestBody))
       
       const response = await fetch('/api/surveys/generate', {
         method: 'POST',
@@ -173,6 +177,7 @@ export default function GeneratePage() {
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="예: 수학"
                   className="w-full px-3 py-2 border rounded-md"
+                  required
                 />
               </div>
               <div>
