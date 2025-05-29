@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    console.log('Survey generate request body:', body)
+    console.log('Survey generate request body:', JSON.stringify(body, null, 2))
     
     const { 
       subject, 
@@ -24,12 +24,36 @@ export async function POST(request: NextRequest) {
       evaluationCriteria
     } = body
 
-    console.log('Extracted values:', { subject, grade, unit })
+    console.log('Extracted values:', { 
+      subject: `"${subject}"`, 
+      grade: `"${grade}"`, 
+      unit: `"${unit}"`,
+      subjectType: typeof subject,
+      gradeType: typeof grade,
+      unitType: typeof unit
+    })
 
-    if (!subject || !grade || !unit) {
-      console.log('Missing required fields:', { subject: !!subject, grade: !!grade, unit: !!unit })
+    // 값이 빈 문자열인지도 체크
+    const isSubjectValid = subject && subject.trim() !== ''
+    const isGradeValid = grade && grade.trim() !== ''
+    const isUnitValid = unit && unit.trim() !== ''
+
+    if (!isSubjectValid || !isGradeValid || !isUnitValid) {
+      console.log('Validation failed:', { 
+        subject: { value: subject, valid: isSubjectValid },
+        grade: { value: grade, valid: isGradeValid },
+        unit: { value: unit, valid: isUnitValid }
+      })
       return NextResponse.json(
-        { success: false, error: 'subject, grade, and unit are required' }, 
+        { 
+          success: false, 
+          error: 'subject, grade, and unit are required',
+          details: {
+            subject: isSubjectValid ? 'valid' : 'invalid',
+            grade: isGradeValid ? 'valid' : 'invalid', 
+            unit: isUnitValid ? 'valid' : 'invalid'
+          }
+        }, 
         { status: 400 }
       )
     }

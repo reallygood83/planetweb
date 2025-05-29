@@ -62,7 +62,9 @@ export default function GeneratePage() {
       if (data.success) {
         setGeneratedSurvey(data.data)
       } else {
-        alert('설문 생성에 실패했습니다: ' + (data.error || '알 수 없는 오류'))
+        const errorMessage = data.error || '알 수 없는 오류'
+        const details = data.details ? '\n\n세부 정보:\n' + JSON.stringify(data.details, null, 2) : ''
+        alert('설문 생성에 실패했습니다: ' + errorMessage + details)
       }
     } catch (error) {
       console.error('Error generating survey:', error)
