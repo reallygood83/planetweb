@@ -1,32 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { generateUniqueCode } from '@/lib/code-generator'
+import { generateSimpleCode, generateTimeBasedCode } from '@/lib/simple-code-generator'
 
 // GET: 사용자의 모든 학급 조회
 export async function GET() {
   try {
-    console.log('Classes GET request started')
+    console.log('=== 학급 목록 조회 시작 ===')
     
-    // Supabase 연결 확인
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
-      console.log('Supabase 설정이 필요합니다')
-      return NextResponse.json({ error: 'Database configuration required' }, { status: 500 })
-    }
-
     const supabase = await createClient()
     
     // 현재 사용자 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError) {
-      console.error('Auth error:', authError)
-      return NextResponse.json({ error: 'Auth error: ' + authError.message }, { status: 401 })
-    }
-    if (!user) {
-      console.log('No user found')
-      return NextResponse.json({ error: 'No user found' }, { status: 401 })
+    if (authError || !user) {
+      console.log('인증 오류 또는 사용자 없음')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    console.log('User found:', user.email)
+    console.log('사용자 확인됨:', user.email)
 
     // 사용자의 모든 학급 조회
     const { data: classes, error } = await supabase
@@ -36,20 +26,21 @@ export async function GET() {
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('학급 조회 실패:', error)
+      console.log('학급 조회 오류:', error.code, error.message)
       return NextResponse.json({ 
         error: '학급 데이터를 불러올 수 없습니다.',
         details: error.message 
       }, { status: 500 })
     }
 
-    console.log('Found classes:', classes?.length || 0)
+    console.log('학급 조회 성공:', classes?.length || 0, '개')
     return NextResponse.json({ success: true, data: classes || [] })
-  } catch (error) {
-    console.error('API 오류:', error)
+    
+  } catch (error: any) {
+    console.error('학급 GET 오류:', error)
     return NextResponse.json({ 
       error: '서버 오류가 발생했습니다.',
-      details: error instanceof Error ? error.message : String(error)
+      details: error.message 
     }, { status: 500 })
   }
 }
@@ -57,34 +48,17 @@ export async function GET() {
 // POST: 새로운 학급 생성
 export async function POST(request: NextRequest) {
   try {
+    console.log('=== 학급 생성 시작 ===')
+    
     const body = await request.json()
     const { class_name, grade, semester, teacher, students = [] } = body
 
     // 필수 필드 검증
     if (!class_name || !grade || !semester) {
       return NextResponse.json(
-        { error: 'class_name, grade, semester are required' }, 
+        { error: '학급명, 학년, 학기는 필수입니다.' }, 
         { status: 400 }
       )
-    }
-
-    // 안전하고 유니크한 학급 코드 생성
-    const codeResult = await generateUniqueCode('CLASS')
-    
-    if (!codeResult.success || !codeResult.code) {
-      console.error('학급 코드 생성 실패:', codeResult.error)
-      return NextResponse.json(
-        { error: codeResult.error || '코드 생성에 실패했습니다.' }, 
-        { status: 500 }
-      )
-    }
-    
-    const school_code = codeResult.code
-
-    // Supabase 연결 확인
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
-      console.log('Supabase 설정이 필요합니다')
-      return NextResponse.json({ error: 'Database configuration required' }, { status: 500 })
     }
 
     const supabase = await createClient()
@@ -95,13 +69,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    console.log('사용자 확인됨:', user.email)
+
     // 학급명 중복 확인
     const { data: existingClass } = await supabase
       .from('classes')
       .select('id')
       .eq('user_id', user.id)
       .eq('class_name', class_name)
-      .single()
+      .maybeSingle()
 
     if (existingClass) {
       return NextResponse.json(
@@ -110,30 +86,84 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 간단한 학급 코드 생성 - 10번만 시도
+    let school_code = ''
+    let attempts = 0
+    let isUnique = false
+    
+    while (attempts < 10 && !isUnique) {
+      attempts++
+      
+      // 처음 5번은 기본 생성, 나머지는 시간 기반
+      school_code = attempts <= 5 
+        ? generateSimpleCode('CLASS')
+        : generateTimeBasedCode('CLASS')
+      
+      console.log(`학급 코드 생성 시도 ${attempts}: ${school_code}`)
+      
+      // 중복 확인
+      const { data: existing, error: checkError } = await supabase
+        .from('classes')
+        .select('id')
+        .eq('school_code', school_code)
+        .maybeSingle()
+      
+      if (checkError) {
+        console.log('중복 확인 오류:', checkError)
+        // 오류가 있어도 일단 진행
+        isUnique = true
+        break
+      }
+      
+      if (!existing) {
+        console.log('유니크한 학급 코드 생성됨:', school_code)
+        isUnique = true
+      } else {
+        console.log('학급 코드 중복됨, 재시도...')
+      }
+    }
+    
+    if (!isUnique) {
+      return NextResponse.json(
+        { error: '유니크한 학급 코드 생성에 실패했습니다. 잠시 후 다시 시도해주세요.' }, 
+        { status: 500 }
+      )
+    }
+
     // 새 학급 생성
+    const newData = {
+      user_id: user.id,
+      class_name,
+      grade,
+      semester,
+      teacher,
+      students,
+      school_code
+    }
+
+    console.log('데이터베이스에 학급 삽입 시도...')
     const { data: newClass, error } = await supabase
       .from('classes')
-      .insert([{
-        user_id: user.id,
-        class_name,
-        grade,
-        semester,
-        teacher,
-        students,
-        school_code
-      }])
+      .insert([newData])
       .select()
       .single()
 
     if (error) {
       console.error('학급 생성 실패:', error)
-      return NextResponse.json({ error: '학급 생성에 실패했습니다.' }, { status: 500 })
+      return NextResponse.json({ 
+        error: '학급 생성에 실패했습니다.',
+        details: error.message 
+      }, { status: 500 })
     }
 
-    console.log(`새 학급 생성됨: ${class_name} (코드: ${school_code}, 시도 횟수: ${codeResult.attempts})`)
+    console.log('학급 생성 성공:', class_name, '(코드:', school_code, ')')
     return NextResponse.json({ success: true, data: newClass }, { status: 201 })
-  } catch (error) {
-    console.error('API 오류:', error)
-    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 })
+    
+  } catch (error: any) {
+    console.error('학급 POST 오류:', error)
+    return NextResponse.json({ 
+      error: '서버 오류가 발생했습니다.',
+      details: error.message 
+    }, { status: 500 })
   }
 }
