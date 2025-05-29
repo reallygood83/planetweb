@@ -61,6 +61,12 @@ export default function ClassPage() {
         setClasses([data.data, ...classes])
         setCreateModalOpen(false)
         setCreatedClass(data.data)
+        
+        // 학급 코드 안내
+        if (data.data.school_code) {
+          alert(`학급이 생성되었습니다!\n\n학급 코드: ${data.data.school_code}\n\n이 코드를 학생들에게 공유하여 설문에 참여하도록 하세요.`)
+        }
+        
         setShowGuide(true)
       } else {
         setError(data.error || '학급 생성에 실패했습니다.')

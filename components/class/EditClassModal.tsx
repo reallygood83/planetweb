@@ -183,6 +183,33 @@ export function EditClassModal({ open, onOpenChange, onSubmit, classData }: Edit
                 placeholder="예: 김선생님"
               />
             </div>
+
+            {classData.school_code && (
+              <div className="space-y-2">
+                <Label>학급 코드</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={classData.school_code}
+                    readOnly
+                    className="bg-gray-50 font-mono"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(classData.school_code || '')
+                      alert('학급 코드가 복사되었습니다.')
+                    }}
+                  >
+                    복사
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500">
+                  학생들이 설문에 참여할 때 사용하는 코드입니다.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* 학생 관리 */}

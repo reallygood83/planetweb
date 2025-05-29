@@ -181,6 +181,13 @@ export default function SchoolCodePage() {
           <p className="mt-2 text-sm text-gray-600">
             동료 교사들과 평가계획을 공유하고 협업하세요.
           </p>
+          <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+            <h3 className="font-medium text-blue-900 mb-2">💡 학급 코드와 학교 코드의 차이</h3>
+            <ul className="text-sm text-blue-800 space-y-1">
+              <li>• <strong>학급 코드</strong>: 학생들이 설문에 참여할 때 사용 (학급별 자동 생성)</li>
+              <li>• <strong>학교 코드</strong>: 교사들이 평가계획을 공유할 때 사용 (그룹별 생성)</li>
+            </ul>
+          </div>
         </div>
         <div className="flex gap-2">
           <Button 
