@@ -147,7 +147,7 @@ function createSimplePrompt({ recordType, subject, teacherNotes, additionalConte
 `
   }
 
-  // 평가 결과 요약
+  // 평가 결과 요약 - 발전적이고 긍정적인 관점으로 재구성
   let evaluationSummary = ''
   if (evaluationResults && evaluationResults.length > 0) {
     const excellentCount = evaluationResults.filter((r: any) => r.result === '매우잘함').length
@@ -155,23 +155,39 @@ function createSimplePrompt({ recordType, subject, teacherNotes, additionalConte
     const averageCount = evaluationResults.filter((r: any) => r.result === '보통').length
     const needsImprovementCount = evaluationResults.filter((r: any) => r.result === '노력요함').length
     
+    // 각 수준별 평가 그룹화
+    const excellentAchievements = evaluationResults.filter((r: any) => r.result === '매우잘함')
+    const goodAchievements = evaluationResults.filter((r: any) => r.result === '잘함')
+    const averageAchievements = evaluationResults.filter((r: any) => r.result === '보통')
+    const improvementAreas = evaluationResults.filter((r: any) => r.result === '노력요함')
+    
     evaluationSummary = `
-**평가 결과 요약:**
-- 매우잘함: ${excellentCount}개
-- 잘함: ${goodCount}개
-- 보통: ${averageCount}개
-- 노력요함: ${needsImprovementCount}개
+**평가 결과 분석:**
 
-**상세 평가 결과:**
-${evaluationResults
-  .map((r: any) => `- ${r.evaluation_name}: ${r.result} ${r.result_criteria ? `(${r.result_criteria})` : ''}`)
-  .join('\n')}
+**탁월한 성취를 보인 영역:** (매우잘함 ${excellentCount}개)
+${excellentAchievements.map((r: any) => 
+  `- ${r.evaluation_name}: ${r.result_criteria || '해당 영역에서 기대 수준을 뛰어넘는 탁월한 성취를 보임'}`
+).join('\n') || '- 해당 없음'}
 
-**우수 성취 내용:**
-${evaluationResults
-  .filter((r: any) => r.result === '매우잘함' || r.result === '잘함')
-  .map((r: any) => `- ${r.evaluation_name}: ${r.result_criteria || r.result}`)
-  .join('\n')}
+**우수한 성취를 보인 영역:** (잘함 ${goodCount}개)
+${goodAchievements.map((r: any) => 
+  `- ${r.evaluation_name}: ${r.result_criteria || '목표한 학습 성취기준을 충실히 달성함'}`
+).join('\n') || '- 해당 없음'}
+
+**안정적인 발전을 보이는 영역:** (보통 ${averageCount}개)
+${averageAchievements.map((r: any) => 
+  `- ${r.evaluation_name}: ${r.result_criteria || '꾸준한 노력으로 점진적인 성장을 보이고 있음'}`
+).join('\n') || '- 해당 없음'}
+
+**성장 잠재력이 있는 영역:** (노력요함 ${needsImprovementCount}개)
+${improvementAreas.map((r: any) => 
+  `- ${r.evaluation_name}: ${r.result_criteria || '지속적인 관심과 노력을 통해 향상될 수 있는 가능성이 충분함'}`
+).join('\n') || '- 해당 없음'}
+
+**종합 평가:**
+- 전체 평가 항목 중 ${excellentCount + goodCount}개 영역에서 우수한 성취를 보임
+- 특히 강점을 보이는 영역을 중심으로 지속적인 성장이 기대됨
+${needsImprovementCount > 0 ? `- ${needsImprovementCount}개 영역은 추가적인 노력으로 충분히 향상 가능한 잠재력을 지님` : ''}
 `
   }
 
@@ -229,13 +245,30 @@ ${teacherNotes}
 
 ${additionalContext ? `**추가 맥락:**\n${additionalContext}` : ''}
 
-**작성 지침:**
+**작성 지침 (긍정적이고 발전적인 관점 중심):**
 위의 모든 정보를 종합하여 ${recordType}을 작성해주세요.
-- 평가 계획에서 설정한 학습목표와 성취기준을 기준으로 학생의 성취 정도를 평가하세요
-- 평가 결과 데이터를 바탕으로 구체적인 성취 수준을 명시하세요
-- 학생의 자기평가 내용에서 드러나는 학습 태도와 성찰 내용을 반영하세요
-- 교사의 관찰 내용을 통해 수업 중 구체적인 모습을 서술하세요
-- 단순한 결과 나열이 아닌, 학생의 성장과 학습 과정을 종합적으로 기술하세요
+
+1. **평가 결과 활용 방법:**
+   - "매우잘함" 평가를 받은 영역: 해당 평가기준의 구체적 내용을 인용하여 학생의 탁월한 성취를 서술
+   - "잘함" 평가를 받은 영역: 평가기준을 바탕으로 목표 달성 정도와 우수한 점을 구체적으로 기술
+   - "보통" 평가를 받은 영역: 현재의 성취 수준과 함께 발전 가능성을 긍정적으로 표현
+   - "노력요함" 평가를 받은 영역: 부정적 표현 대신 "~하려는 노력을 보임", "~에 대한 관심이 높아지고 있음", "점차 향상되고 있음" 등의 발전적 표현 사용
+
+2. **긍정적 서술 원칙:**
+   - 학생의 강점과 잠재력을 중심으로 서술
+   - 부족한 점은 '성장 가능성'과 '발전 과정'으로 재해석
+   - "못함", "부족함", "미흡함" 대신 "노력중", "발전중", "관심을 가지기 시작함" 등 사용
+   - 구체적인 개선 사례나 작은 진전도 의미있게 포함
+
+3. **평가기준 연계:**
+   - 각 평가 영역의 평가기준 문구를 직접 활용하여 구체성 확보
+   - 평가 결과와 교사 관찰 내용을 자연스럽게 연결
+   - 학생의 자기평가에서 나타난 긍정적 태도와 노력을 강조
+
+4. **종합적 성장 관점:**
+   - 단순한 결과 나열이 아닌, 학생의 성장 과정을 스토리로 구성
+   - 현재의 성취와 함께 미래의 발전 가능성을 시사
+   - 학생이 보인 작은 변화와 노력도 의미있게 포함
 
 반드시 명사형 종결어미로 끝나는 완성된 문장으로 작성하고, 학생 이름은 절대 포함하지 마세요.`
   

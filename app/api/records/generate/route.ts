@@ -80,6 +80,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Response not found' }, { status: 404 })
     }
 
+    // 학생의 평가 결과 조회 (있는 경우)
+    let evaluationResults = []
+    if (responseData.student_name && responseData.class_name) {
+      const { data: evalResults } = await supabase
+        .from('student_evaluation_results')
+        .select(`
+          evaluation_name,
+          result,
+          result_criteria,
+          teacher_notes,
+          evaluation_date
+        `)
+        .eq('student_name', responseData.student_name)
+        .eq('class_name', responseData.class_name)
+        .eq('user_id', user.id)
+        .order('evaluation_date', { ascending: false })
+
+      if (evalResults) {
+        evaluationResults = evalResults
+      }
+    }
+
     // 사용자의 API 키 조회
     const { data: profile } = await supabase
       .from('profiles')
@@ -124,7 +146,8 @@ export async function POST(request: NextRequest) {
       responseData,
       teacherNotes,
       includeEvaluationCriteria,
-      neisRules: NEIS_RULES
+      neisRules: NEIS_RULES,
+      evaluationResults
     })
 
     // Gemini API 호출
@@ -205,7 +228,8 @@ function createRecordPrompt({
   responseData,
   teacherNotes,
   includeEvaluationCriteria,
-  neisRules
+  neisRules,
+  evaluationResults = []
 }: any) {
   const evaluation = responseData.surveys.evaluation_plans
   const responses = responseData.responses
@@ -220,6 +244,23 @@ function createRecordPrompt({
       neisRules,
       survey
     })
+  }
+
+  // 평가 결과 분석 (있는 경우)
+  let evaluationResultsAnalysis = ''
+  if (evaluationResults && evaluationResults.length > 0) {
+    const excellentResults = evaluationResults.filter((r: any) => r.result === '매우잘함')
+    const goodResults = evaluationResults.filter((r: any) => r.result === '잘함')
+    const averageResults = evaluationResults.filter((r: any) => r.result === '보통')
+    const needsImprovementResults = evaluationResults.filter((r: any) => r.result === '노력요함')
+    
+    evaluationResultsAnalysis = `
+[평가 결과 분석]
+${excellentResults.length > 0 ? `우수 성취 영역: ${excellentResults.map((r: any) => `${r.evaluation_name}(${r.result_criteria || '탁월한 성취'})`).join(', ')}` : ''}
+${goodResults.length > 0 ? `목표 달성 영역: ${goodResults.map((r: any) => `${r.evaluation_name}(${r.result_criteria || '우수한 성취'})`).join(', ')}` : ''}
+${averageResults.length > 0 ? `발전 중인 영역: ${averageResults.map((r: any) => `${r.evaluation_name}(${r.result_criteria || '꾸준한 성장'})`).join(', ')}` : ''}
+${needsImprovementResults.length > 0 ? `성장 잠재 영역: ${needsImprovementResults.map((r: any) => `${r.evaluation_name}(${r.result_criteria || '지속적 노력 필요'})`).join(', ')}` : ''}
+`
   }
 
   return `
@@ -251,6 +292,8 @@ ${includeEvaluationCriteria ? `
 - 노력요함: ${evaluation?.evaluation_criteria?.needs_improvement?.description}
 ` : ''}
 
+${evaluationResultsAnalysis}
+
 [학생 자기평가 응답]
 ${questions?.multipleChoice?.map((q: any, idx: number) => 
   `Q${idx + 1}. ${q.question}
@@ -267,11 +310,26 @@ ${teacherNotes ? `
 ${teacherNotes}
 ` : ''}
 
+[작성 지침 - 긍정적 성장 중심]
+1. 평가 결과에 따른 서술:
+   - 매우잘함/잘함: 구체적인 평가기준을 인용하여 학생의 우수한 성취를 기술
+   - 보통: 현재 수준과 발전 가능성을 균형있게 표현
+   - 노력요함: "~하려는 노력을 보임", "점차 향상되고 있음" 등 발전적 표현 사용
+
+2. 부정적 표현 금지:
+   - "못함", "미흡함" → "노력 중", "관심을 가지기 시작함"
+   - "부족함" → "추가적인 연습으로 향상 가능함"
+   - 모든 수준의 학생에게 성장 가능성과 긍정적 측면 포함
+
+3. 구체적 근거 제시:
+   - 학생의 자기평가 응답에서 긍정적 태도나 노력의 흔적 찾기
+   - 작은 진전이나 개선도 의미있게 포함
+
 [작성 예시]
 ${neisRules.format[recordType].example}
 
 위 정보를 종합하여 ${recordType} 기록을 작성해주세요. 
-학생의 구체적인 학습 활동과 성취 수준을 드러내되, 학생 이름은 절대 포함하지 마세요.
+학생의 강점을 부각하고 성장 가능성을 제시하며, 모든 학생이 자신감을 가질 수 있는 내용으로 작성하세요.
 `
 }
 
@@ -296,6 +354,7 @@ function createBehaviorRecordPrompt({
 4. 핵심 인성 요소를 괄호 안에 명시하세요 (예: (배려), (협력), (타인존중))
 5. 구체적이고 객관적인 행동 사례 위주로 서술하세요
 6. 추상적 표현("착한 학생", "성실한 학생") 사용 금지
+7. 모든 학생의 긍정적 측면과 성장 가능성을 포함하세요
 
 [핵심 인성 요소]
 ${NEIS_RULES.format.행동특성및종합의견.coreValues.map(value => `- ${value}`).join('\n')}
@@ -330,17 +389,30 @@ ${teacherNotes ? `
 ${teacherNotes}
 ` : ''}
 
-[작성 가이드]
+[작성 가이드 - 긍정적 성장 중심]
 1. 학생의 응답에서 구체적인 행동 사례를 추출하세요
 2. 해당하는 핵심 인성 요소를 괄호로 명시하세요
 3. 학생의 잠재력, 인성, 자기주도적 능력이 드러나도록 작성하세요
 4. 변화와 성장 가능성을 함께 언급하세요
 
+5. **긍정적 표현 원칙:**
+   - 문제 행동 → "~하려는 노력을 보임", "점차 개선되고 있음"
+   - 소극적 태도 → "점차 적극적으로 변화하고 있음", "자신감을 키워가고 있음"
+   - 미흡한 부분 → "~에 대한 관심이 생기기 시작함", "지속적인 노력을 보임"
+   - 모든 학생에게서 최소 2개 이상의 긍정적 특성 발견
+
+6. **성장 가능성 표현:**
+   - "앞으로 ~할 것으로 기대됨"
+   - "~하는 모습이 점차 늘어나고 있음"
+   - "~에 대한 잠재력을 보이고 있음"
+   - "지속적인 성장이 관찰됨"
+
 [작성 예시]
 ${neisRules.format.행동특성및종합의견.example}
 
 위 정보를 종합하여 학생의 행동특성 및 종합의견을 작성해주세요.
-구체적인 행동 사례와 상황을 포함하되, 학생 이름은 절대 포함하지 마세요.
+모든 학생이 자신의 가치를 인정받고 성장 가능성을 확인받을 수 있도록, 
+구체적이면서도 따뜻한 시선으로 작성하되, 학생 이름은 절대 포함하지 마세요.
 `
 }
 
