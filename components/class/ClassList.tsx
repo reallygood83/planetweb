@@ -2,16 +2,18 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { CodeDisplay } from '@/components/ui/code-display'
 import { Class } from '@/types'
-import { Pencil, Trash2, Users, Copy } from 'lucide-react'
+import { Pencil, Trash2, Users } from 'lucide-react'
 
 interface ClassListProps {
   classes: Class[]
   onEdit: (classData: Class) => void
   onDelete: (classId: string) => void
+  onCodeUpdated?: (classId: string, newCode: string) => void
 }
 
-export function ClassList({ classes, onEdit, onDelete }: ClassListProps) {
+export function ClassList({ classes, onEdit, onDelete, onCodeUpdated }: ClassListProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ko-KR')
   }
@@ -56,23 +58,15 @@ export function ClassList({ classes, onEdit, onDelete }: ClassListProps) {
                   <span>학생 {classData.students?.length || 0}명</span>
                 </div>
                 {classData.school_code ? (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <span className="font-medium">학급 코드:</span>
-                    <code className="bg-gray-100 px-2 py-1 rounded font-mono">{classData.school_code}</code>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        navigator.clipboard.writeText(classData.school_code || '')
-                        alert('학급 코드가 복사되었습니다.')
-                      }}
-                      className="h-6 w-6 p-0"
-                    >
-                      <Copy className="h-3 w-3" />
-                    </Button>
-                  </div>
+                  <CodeDisplay
+                    code={classData.school_code}
+                    codeType="CLASS"
+                    recordId={classData.id}
+                    onCodeUpdated={(newCode) => onCodeUpdated?.(classData.id, newCode)}
+                    className="py-2"
+                  />
                 ) : (
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-gray-500 py-2">
                     <span className="italic">학급 코드 없음</span>
                   </div>
                 )}

@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { generateUniqueCode, validateCode } from '@/lib/code-generator'
 
 // GET: 사용자가 참여한 학교 코드 목록 조회
 export async function GET() {
   try {
     // Supabase 연결 확인
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
-      console.log('Supabase not configured, returning empty data')
-      return NextResponse.json({ success: true, data: [] })
+      console.log('Supabase 설정이 필요합니다')
+      return NextResponse.json({ error: 'Database configuration required' }, { status: 500 })
     }
 
     const supabase = await createClient()
@@ -26,18 +27,14 @@ export async function GET() {
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('Error fetching school codes:', error)
-      // 테이블이 없는 경우 빈 배열 반환
-      if (error.message?.includes('relation') || error.message?.includes('table')) {
-        return NextResponse.json({ success: true, data: [] })
-      }
-      return NextResponse.json({ error: 'Failed to fetch school codes' }, { status: 500 })
+      console.error('학교 코드 조회 실패:', error)
+      return NextResponse.json({ error: '학교 코드를 불러올 수 없습니다.' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, data: schoolCodes || [] })
   } catch (error) {
-    console.error('API Error:', error)
-    return NextResponse.json({ success: true, data: [] }) // 폴백으로 빈 배열 반환
+    console.error('API 오류:', error)
+    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 })
   }
 }
 
@@ -59,40 +56,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 6자리 영숫자 코드 생성
-    const generateCode = () => {
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-      let code = ''
-      for (let i = 0; i < 6; i++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length))
-      }
-      return code
+    // 안전하고 유니크한 학교 코드 생성
+    const codeResult = await generateUniqueCode('SCHOOL')
+    
+    if (!codeResult.success || !codeResult.code) {
+      console.error('학교 코드 생성 실패:', codeResult.error)
+      return NextResponse.json(
+        { error: codeResult.error || '코드 생성에 실패했습니다.' }, 
+        { status: 500 }
+      )
     }
-
-    const code = generateCode()
+    
+    const code = codeResult.code
 
     // Supabase 연결 확인
-    console.log('Checking Supabase connection...')
-    console.log('SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + '...')
-    
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
-      console.log('Supabase not configured, returning simulated school code')
-      // 시뮬레이션된 성공 응답
-      return NextResponse.json({ 
-        success: true, 
-        data: {
-          id: 'temp-' + Date.now(),
-          code,
-          group_name,
-          description,
-          school_name,
-          target_grade: target_grade || null,
-          primary_subject: primary_subject || null,
-          creator_email: 'demo@example.com',
-          created_at: new Date().toISOString(),
-          member_count: 0
-        }
-      }, { status: 201 })
+      console.log('Supabase 설정이 필요합니다')
+      return NextResponse.json({ error: 'Database configuration required' }, { status: 500 })
     }
 
     const supabase = await createClient()
@@ -103,53 +83,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    try {
-      // 학교 코드 생성
-      const { data: newSchoolCode, error: createError } = await supabase
-        .from('school_codes')
-        .insert([{
-          code,
-          group_name,
-          description,
-          school_name,
-          target_grade: target_grade || null,
-          primary_subject: primary_subject || null,
-          creator_id: user.id,
-          creator_email: user.email,
-          members: [user.email] // 생성자를 멤버로 추가
-        }])
-        .select()
-        .single()
-
-      if (createError) {
-        console.error('Error creating school code:', createError)
-        // 테이블이 없는 경우 더미 데이터 반환
-        if (createError.message?.includes('relation') || createError.message?.includes('table')) {
-          const dummySchoolCode = {
-            id: 'dummy-' + Date.now(),
-            code,
-            group_name,
-            description,
-            school_name,
-            target_grade: target_grade || null,
-            primary_subject: primary_subject || null,
-            creator_id: user.id,
-            creator_email: user.email || '',
-            members: [user.email || ''],
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-          return NextResponse.json({ success: true, data: dummySchoolCode }, { status: 201 })
-        }
-        return NextResponse.json({ error: 'Failed to create school code' }, { status: 500 })
-      }
-
-      return NextResponse.json({ success: true, data: newSchoolCode }, { status: 201 })
-    } catch (dbError) {
-      console.error('Database error:', dbError)
-      // 데이터베이스 연결 실패 시 더미 데이터 반환
-      const dummySchoolCode = {
-        id: 'dummy-' + Date.now(),
+    // 학교 코드 생성
+    const { data: newSchoolCode, error: createError } = await supabase
+      .from('school_codes')
+      .insert([{
         code,
         group_name,
         description,
@@ -157,32 +94,24 @@ export async function POST(request: NextRequest) {
         target_grade: target_grade || null,
         primary_subject: primary_subject || null,
         creator_id: user.id,
-        creator_email: user.email || '',
-        members: [user.email || ''],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-      return NextResponse.json({ success: true, data: dummySchoolCode }, { status: 201 })
+        creator_email: user.email,
+        members: [user.email] // 생성자를 멤버로 추가
+      }])
+      .select()
+      .single()
+
+    if (createError) {
+      console.error('학교 코드 생성 실패:', createError)
+      return NextResponse.json({ error: '학교 코드 생성에 실패했습니다.' }, { status: 500 })
     }
+
+    console.log(`새 학교 코드 생성됨: ${code} (시도 횟수: ${codeResult.attempts})`)
+    return NextResponse.json({ success: true, data: newSchoolCode }, { status: 201 })
   } catch (error: any) {
-    console.error('API Error:', error)
-    // 어떤 오류든 시뮬레이션된 성공 응답 반환
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase()
-    
-    return NextResponse.json({ 
-      success: true, 
-      data: {
-        id: 'fallback-' + Date.now(),
-        code,
-        group_name: body.group_name || '임시 그룹',
-        description: body.description || '임시 설명',
-        school_name: body.school_name || '임시 학교',
-        target_grade: body.target_grade || null,
-        primary_subject: body.primary_subject || null,
-        creator_email: 'demo@example.com',
-        created_at: new Date().toISOString(),
-        member_count: 1
-      }
-    }, { status: 201 })
+    console.error('API 오류:', error)
+    return NextResponse.json(
+      { error: '서버 오류가 발생했습니다.' }, 
+      { status: 500 }
+    )
   }
 }

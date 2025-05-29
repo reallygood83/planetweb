@@ -30,13 +30,14 @@ export default function ClassPage() {
   const fetchClasses = async () => {
     try {
       setLoading(true)
+      setError(null)
       const response = await fetch('/api/classes')
       const data = await response.json()
 
       if (data.success) {
         setClasses(data.data)
       } else {
-        setError('학급 목록을 불러오는데 실패했습니다.')
+        setError(data.error || '학급 목록을 불러오는데 실패했습니다.')
       }
     } catch {
       setError('네트워크 오류가 발생했습니다.')
@@ -62,9 +63,9 @@ export default function ClassPage() {
         setCreateModalOpen(false)
         setCreatedClass(data.data)
         
-        // 학급 코드 안내
+        // 새로운 학급 코드 안내
         if (data.data.school_code) {
-          alert(`학급이 생성되었습니다!\n\n학급 코드: ${data.data.school_code}\n\n이 코드를 학생들에게 공유하여 설문에 참여하도록 하세요.`)
+          alert(`학급이 생성되었습니다!\n\n학급 코드: ${data.data.school_code}\n\n이 코드는 학생들이 설문에 참여할 때 사용합니다.\n안전한 코드 생성 시스템을 통해 중복 방지된 코드입니다.`)
         }
         
         setShowGuide(true)
@@ -182,6 +183,11 @@ export default function ClassPage() {
           classes={classes}
           onEdit={openEditModal}
           onDelete={handleDeleteClass}
+          onCodeUpdated={(classId, newCode) => {
+            setClasses(classes.map(c => 
+              c.id === classId ? { ...c, school_code: newCode } : c
+            ))
+          }}
         />
       )}
 
