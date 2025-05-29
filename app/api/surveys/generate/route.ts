@@ -83,6 +83,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    console.log('API key found, length:', apiKey.length)
+
     // Gemini API를 통한 자기평가 설문 생성
     const prompt = `
 다음 평가계획을 바탕으로 초등학생이 답변할 수 있는 자기평가 설문을 생성해주세요.

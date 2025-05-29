@@ -253,24 +253,49 @@ export default function GeneratePage() {
               />
             </div>
 
-            <Button 
-              onClick={handleGenerate}
-              disabled={isGenerating || !subject || !grade || !unit}
-              className="w-full"
-              size="lg"
-            >
-              {isGenerating ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  설문 생성 중...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  AI 설문 생성하기
-                </>
-              )}
-            </Button>
+            <div className="space-y-3">
+              <Button 
+                onClick={async () => {
+                  try {
+                    console.log('Testing with data:', { subject, grade, unit })
+                    const response = await fetch('/api/test-survey', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ subject, grade, unit })
+                    })
+                    const data = await response.json()
+                    console.log('Test response:', data)
+                    alert('테스트 결과: ' + JSON.stringify(data, null, 2))
+                  } catch (error) {
+                    console.error('Test error:', error)
+                    alert('테스트 오류: ' + error)
+                  }
+                }}
+                variant="outline"
+                className="w-full"
+              >
+                🔍 연결 테스트
+              </Button>
+              
+              <Button 
+                onClick={handleGenerate}
+                disabled={isGenerating || !subject || !grade || !unit}
+                className="w-full"
+                size="lg"
+              >
+                {isGenerating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    설문 생성 중...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    AI 설문 생성하기
+                  </>
+                )}
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
