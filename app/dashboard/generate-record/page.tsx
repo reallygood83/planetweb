@@ -95,18 +95,6 @@ export default function GenerateRecordPage() {
   // Loading states
   const [isLoadingResponses, setIsLoadingResponses] = useState(false)
 
-  useEffect(() => {
-    if (user) {
-      fetchClasses()
-    }
-  }, [user])
-
-  useEffect(() => {
-    if (selectedStudent && selectedClass) {
-      fetchStudentResponses()
-    }
-  }, [selectedStudent, selectedClass, fetchStudentResponses])
-
   const fetchClasses = async () => {
     try {
       const response = await fetch('/api/classes')
@@ -141,6 +129,18 @@ export default function GenerateRecordPage() {
       setIsLoadingResponses(false)
     }
   }, [selectedStudent, selectedClass])
+
+  useEffect(() => {
+    if (user) {
+      fetchClasses()
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (selectedStudent && selectedClass) {
+      fetchStudentResponses()
+    }
+  }, [selectedStudent, selectedClass, fetchStudentResponses])
 
   const handleGenerateContent = async () => {
     if (!selectedResponse || !selectedStudent || !selectedClass) return

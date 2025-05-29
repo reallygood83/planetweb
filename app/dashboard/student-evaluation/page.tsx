@@ -70,24 +70,6 @@ export default function StudentEvaluationPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [selectedResponse, setSelectedResponse] = useState<StudentResponse | null>(null)
 
-  useEffect(() => {
-    if (user) {
-      fetchClasses()
-    }
-  }, [user])
-
-  useEffect(() => {
-    if (selectedClass) {
-      setStudents(selectedClass.students || [])
-    }
-  }, [selectedClass])
-
-  useEffect(() => {
-    if (selectedStudent && selectedClass) {
-      fetchStudentResponses()
-    }
-  }, [selectedStudent, selectedClass, fetchStudentResponses])
-
   const fetchClasses = async () => {
     try {
       const response = await fetch('/api/classes')
@@ -122,6 +104,24 @@ export default function StudentEvaluationPage() {
       setIsLoading(false)
     }
   }, [selectedStudent, selectedClass])
+
+  useEffect(() => {
+    if (user) {
+      fetchClasses()
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (selectedClass) {
+      setStudents(selectedClass.students || [])
+    }
+  }, [selectedClass])
+
+  useEffect(() => {
+    if (selectedStudent && selectedClass) {
+      fetchStudentResponses()
+    }
+  }, [selectedStudent, selectedClass, fetchStudentResponses])
 
   const filteredStudents = students.filter(student =>
     student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
