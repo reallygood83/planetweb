@@ -81,24 +81,39 @@ export async function POST(request: NextRequest) {
     }
 
     // 사용자의 API 키 조회
-    const { data: profile } = await supabase
+    console.log('Fetching user profile...')
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('api_key_hint')
       .eq('id', user.id)
       .single()
+
+    console.log('Profile fetch result:', { profile, profileError })
 
     // 사용자 API 키가 있으면 사용, 없으면 환경 변수 사용
     let apiKey = ''
     if (profile?.api_key_hint) {
       // TODO: 실제 구현시 암호화된 API 키를 복호화해야 함
       apiKey = profile.api_key_hint
+      console.log('Using user API key (hint):', `${apiKey.substring(0, 10)}...`)
     } else {
       apiKey = process.env.GEMINI_API_KEY || ''
+      console.log('Using environment API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NOT SET')
     }
 
     if (!apiKey) {
+      console.log('No API key available')
       return NextResponse.json(
         { success: false, error: 'API key not configured. Please set your API key in the dashboard.' }, 
+        { status: 400 }
+      )
+    }
+
+    // API 키 형식 검증
+    if (!apiKey.startsWith('AIza')) {
+      console.log('Invalid API key format:', apiKey.substring(0, 10))
+      return NextResponse.json(
+        { success: false, error: 'Invalid API key format. Please check your Gemini API key.' }, 
         { status: 400 }
       )
     }
