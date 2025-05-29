@@ -83,7 +83,7 @@ export async function PUT(
       grade: body.grade?.trim() || null,
       semester: body.semester?.trim() || null,
       unit: body.unit.trim(),
-      period: body.period?.trim() || null, // 선택사항
+      lesson: body.lesson?.trim() || null, // 선택사항
       learning_objectives: body.learning_objectives?.trim() || null,
       achievement_standards: body.achievement_standards?.trim() || null,
       evaluation_criteria: body.evaluation_criteria?.trim() || null,

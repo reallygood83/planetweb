@@ -21,7 +21,7 @@ export function EditEvaluationModal({ open, onOpenChange, evaluation, onSave }: 
   const [grade, setGrade] = useState('')
   const [semester, setSemester] = useState('')
   const [unit, setUnit] = useState('')
-  const [period, setPeriod] = useState('')
+  const [lesson, setLesson] = useState('')
   const [learningObjectives, setLearningObjectives] = useState('')
   const [achievementStandards, setAchievementStandards] = useState('')
   const [evaluationCriteria, setEvaluationCriteria] = useState('')
@@ -33,10 +33,22 @@ export function EditEvaluationModal({ open, onOpenChange, evaluation, onSave }: 
       setGrade(evaluation.grade || '')
       setSemester(evaluation.semester || '')
       setUnit(evaluation.unit || '')
-      setPeriod(evaluation.period || '')
-      setLearningObjectives(evaluation.learning_objectives || '')
-      setAchievementStandards(evaluation.achievement_standards || '')
-      setEvaluationCriteria(evaluation.evaluation_criteria || '')
+      setLesson(evaluation.lesson || '')
+      setLearningObjectives(
+        Array.isArray(evaluation.learning_objectives) 
+          ? evaluation.learning_objectives.join('\n') 
+          : evaluation.learning_objectives || ''
+      )
+      setAchievementStandards(
+        Array.isArray(evaluation.achievement_standards)
+          ? evaluation.achievement_standards.map(std => `${std.code}: ${std.content}`).join('\n')
+          : (evaluation.achievement_standards as string) || ''
+      )
+      setEvaluationCriteria(
+        typeof evaluation.evaluation_criteria === 'object' && evaluation.evaluation_criteria !== null
+          ? JSON.stringify(evaluation.evaluation_criteria, null, 2)
+          : (evaluation.evaluation_criteria as string) || ''
+      )
     }
   }, [evaluation, open])
 
@@ -49,16 +61,42 @@ export function EditEvaluationModal({ open, onOpenChange, evaluation, onSave }: 
     setIsSaving(true)
     
     try {
+      // Transform data back to proper types
+      const processedLearningObjectives = learningObjectives.trim()
+        ? learningObjectives.split('\n').map(obj => obj.trim()).filter(obj => obj.length > 0)
+        : []
+      
+      const processedAchievementStandards = achievementStandards.trim()
+        ? achievementStandards.split('\n').map(line => {
+            const trimmed = line.trim()
+            if (trimmed.includes(':')) {
+              const [code, content] = trimmed.split(':', 2)
+              return { code: code.trim(), content: content.trim() }
+            }
+            return { code: '', content: trimmed }
+          }).filter(std => std.content.length > 0)
+        : []
+      
+      let processedEvaluationCriteria
+      try {
+        processedEvaluationCriteria = evaluationCriteria.trim()
+          ? JSON.parse(evaluationCriteria)
+          : {}
+      } catch {
+        // If JSON parsing fails, treat as simple string
+        processedEvaluationCriteria = { criteria: evaluationCriteria.trim() }
+      }
+
       await onSave({
         id: evaluation?.id,
         subject: subject.trim(),
         grade: grade.trim(),
         semester: semester.trim(),
         unit: unit.trim(),
-        period: period.trim() || null, // 선택사항
-        learning_objectives: learningObjectives.trim(),
-        achievement_standards: achievementStandards.trim(),
-        evaluation_criteria: evaluationCriteria.trim()
+        lesson: lesson.trim() || undefined, // 선택사항
+        learning_objectives: processedLearningObjectives,
+        achievement_standards: processedAchievementStandards,
+        evaluation_criteria: processedEvaluationCriteria
       })
       onOpenChange(false)
     } catch (error) {
@@ -158,14 +196,14 @@ export function EditEvaluationModal({ open, onOpenChange, evaluation, onSave }: 
             </div>
 
             <div>
-              <Label htmlFor="edit-period">
+              <Label htmlFor="edit-lesson">
                 차시 <Badge variant="secondary" className="text-xs ml-1">선택</Badge>
               </Label>
               <input
-                id="edit-period"
+                id="edit-lesson"
                 type="text"
-                value={period}
-                onChange={(e) => setPeriod(e.target.value)}
+                value={lesson}
+                onChange={(e) => setLesson(e.target.value)}
                 placeholder="예: 1/8차시 (선택사항)"
                 className="w-full px-3 py-2 border rounded-md"
               />
