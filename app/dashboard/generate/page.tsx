@@ -22,26 +22,42 @@ export default function GeneratePage() {
   const [generatedSurvey, setGeneratedSurvey] = useState<any>(null)
 
   const handleGenerate = async () => {
+    console.log('Generating survey with data:', {
+      subject,
+      grade,
+      semester,
+      unit,
+      learningObjectives,
+      achievementStandards,
+      evaluationCriteria
+    })
+    
     setIsGenerating(true)
     
     try {
+      const requestBody = {
+        subject,
+        grade,
+        semester,
+        unit,
+        learningObjectives,
+        achievementStandards,
+        evaluationCriteria
+      }
+      
+      console.log('Request body:', requestBody)
+      
       const response = await fetch('/api/surveys/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          subject,
-          grade,
-          semester,
-          unit,
-          learningObjectives,
-          achievementStandards,
-          evaluationCriteria
-        })
+        body: JSON.stringify(requestBody)
       })
 
+      console.log('Response status:', response.status)
       const data = await response.json()
+      console.log('Response data:', data)
 
       if (data.success) {
         setGeneratedSurvey(data.data)
