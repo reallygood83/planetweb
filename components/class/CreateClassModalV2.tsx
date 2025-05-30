@@ -124,8 +124,8 @@ export function CreateClassModalV2({ open, onOpenChange, onSubmit }: CreateClass
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg p-4 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">새 학급 만들기</h2>
           <Button
@@ -137,7 +137,7 @@ export function CreateClassModalV2({ open, onOpenChange, onSubmit }: CreateClass
           </Button>
         </div>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="className">
@@ -236,19 +236,19 @@ export function CreateClassModalV2({ open, onOpenChange, onSubmit }: CreateClass
               </Button>
             </div>
             
-            <div className="bg-gray-50 p-3 rounded-md">
-              <p className="text-sm text-gray-600 mb-2">
+            <div className="bg-gray-50 p-2 rounded-md">
+              <p className="text-xs text-gray-600 mb-2">
                 엑셀에서 복사하여 붙여넣기 하거나, 개별적으로 추가할 수 있습니다.
               </p>
               <Textarea
                 placeholder="번호[탭]이름 형식으로 붙여넣기 (예: 1	홍길동)"
                 onPaste={handleCSVPaste}
-                className="min-h-[60px]"
+                className="min-h-[50px] text-sm"
               />
             </div>
 
             {students.length > 0 && (
-              <div className="space-y-2 max-h-[200px] overflow-y-auto border rounded-md p-3">
+              <div className="space-y-1 max-h-[150px] overflow-y-auto border rounded-md p-2">
                 {students.map((student, index) => (
                   <div key={index} className="flex gap-2 items-center">
                     <Input
@@ -278,16 +278,16 @@ export function CreateClassModalV2({ open, onOpenChange, onSubmit }: CreateClass
             )}
           </div>
 
-          <div className="bg-blue-50 p-3 rounded-md flex gap-2">
-            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-900">
+          <div className="bg-blue-50 p-2 rounded-md flex gap-2">
+            <AlertCircle className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="text-xs text-blue-900">
               <p className="font-medium">학급 생성 안내</p>
               <p>• 학급 코드는 선택사항이며, 나중에 설정할 수 있습니다.</p>
               <p>• 학생 명단은 나중에 추가하거나 수정할 수 있습니다.</p>
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex justify-end gap-3 pt-3 border-t mt-3">
             <Button
               type="button"
               variant="outline"

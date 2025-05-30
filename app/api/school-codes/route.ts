@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { generateSimpleCode, generateTimeBasedCode } from '@/lib/simple-code-generator'
 
 // GET: 사용자가 참여한 학교 코드 목록 조회
@@ -21,8 +21,9 @@ export async function GET() {
     // 학교 그룹 조회 - 단순화된 방식
     console.log('데이터베이스 조회 시도...')
     
-    // 먼저 사용자의 멤버십 조회
-    const { data: memberships, error: membershipError } = await supabase
+    // Service Role 클라이언트로 멤버십 조회 (정책 우회)
+    const serviceSupabase = await createServiceClient()
+    const { data: memberships, error: membershipError } = await serviceSupabase
       .from('group_memberships')
       .select('group_id')
       .eq('user_id', user.id)
@@ -63,7 +64,7 @@ export async function GET() {
     console.log('그룹 ID들:', groupIds)
     
     // 해당 그룹들 조회
-    const { data: schoolCodes, error } = await supabase
+    const { data: schoolCodes, error } = await serviceSupabase
       .from('school_groups')
       .select('*')
       .in('id', groupIds)
@@ -195,7 +196,8 @@ export async function POST(request: NextRequest) {
       console.log('수동 입력 코드:', code)
       
       // 중복 검사
-      const { data: existing, error: checkError } = await supabase
+      const serviceSupabase = await createServiceClient()
+      const { data: existing, error: checkError } = await serviceSupabase
         .from('school_groups')
         .select('id')
         .eq('code', code)
@@ -229,7 +231,8 @@ export async function POST(request: NextRequest) {
         console.log(`코드 생성 시도 ${attempts}: ${code}`)
         
         // 중복 확인
-        const { data: existing, error: checkError } = await supabase
+        const serviceSupabase = await createServiceClient()
+        const { data: existing, error: checkError } = await serviceSupabase
           .from('school_groups')
           .select('id')
           .eq('code', code)
@@ -279,7 +282,8 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('데이터베이스에 삽입 시도...')
-    const { data: newSchoolGroup, error: createError } = await supabase
+    const serviceSupabase = await createServiceClient()
+    const { data: newSchoolGroup, error: createError } = await serviceSupabase
       .from('school_groups')
       .insert([newData])
       .select()
@@ -305,7 +309,7 @@ export async function POST(request: NextRequest) {
     
     // 그룹 멤버십 추가 시도
     try {
-      const { error: membershipError } = await supabase
+      const { error: membershipError } = await serviceSupabase
         .from('group_memberships')
         .insert({
           group_id: newSchoolGroup.id,

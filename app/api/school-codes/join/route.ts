@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 
 // POST: 학교 코드 참여
 export async function POST(request: NextRequest) {
@@ -24,7 +24,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 학교 그룹 확인
-    const { data: schoolGroup, error: fetchError } = await supabase
+    const serviceSupabase = await createServiceClient()
+    const { data: schoolGroup, error: fetchError } = await serviceSupabase
       .from('school_groups')
       .select('*')
       .eq('code', code.toUpperCase())
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 이미 멤버인지 확인
-    const { data: existingMembership } = await supabase
+    const { data: existingMembership } = await serviceSupabase
       .from('group_memberships')
       .select('*')
       .eq('group_id', schoolGroup.id)
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 멤버 추가
-    const { data: membership, error: updateError } = await supabase
+    const { data: membership, error: updateError } = await serviceSupabase
       .from('group_memberships')
       .insert({
         group_id: schoolGroup.id,

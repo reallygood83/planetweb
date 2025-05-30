@@ -71,8 +71,8 @@ export function CreateSchoolCodeModal({ open, onOpenChange, onSubmit }: CreateSc
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-lg">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">새 학교 코드 생성</h2>
           <Button
@@ -140,7 +140,7 @@ export function CreateSchoolCodeModal({ open, onOpenChange, onSubmit }: CreateSc
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="그룹의 목적과 활동 내용을 간단히 설명해주세요."
-              rows={3}
+              rows={2}
               required
             />
           </div>
@@ -168,8 +168,8 @@ export function CreateSchoolCodeModal({ open, onOpenChange, onSubmit }: CreateSc
           </div>
 
           <div className="bg-blue-50 p-3 rounded-md flex gap-2">
-            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-900">
+            <AlertCircle className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="text-xs text-blue-900">
               <p className="font-medium">코드 생성 안내</p>
               <p>• 다른 교사들이 이 코드로 그룹에 참여할 수 있습니다.</p>
               <p>• 코드는 한번 생성되면 변경할 수 없으니 신중히 입력해주세요.</p>
@@ -177,7 +177,7 @@ export function CreateSchoolCodeModal({ open, onOpenChange, onSubmit }: CreateSc
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex justify-end gap-3 pt-3 border-t mt-4">
             <Button
               type="button"
               variant="outline"
