@@ -146,7 +146,21 @@ export function GenerateSurveyModal({
         body: JSON.stringify({
           title: customTitle || generatedSurvey.title,
           evaluation_plan_id: selectedPlan.id,
-          questions: generatedSurvey.questions,
+          questions: [
+            // 객관식 문항들을 평면 배열로 변환
+            ...(generatedSurvey.questions?.multipleChoice || []).map((q: any) => ({
+              type: 'multiple_choice',
+              question: q.question,
+              options: q.options,
+              guideline: q.guideline
+            })),
+            // 주관식 문항들을 평면 배열로 변환
+            ...(generatedSurvey.questions?.shortAnswer || []).map((q: any) => ({
+              type: 'short_answer',
+              question: q.question,
+              guideline: q.guideline
+            }))
+          ],
           is_active: true
         }),
       })
