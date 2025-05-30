@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       }, { status: 404 });
     }
 
-    // 학급 정보 가져오기 (학급 코드 사용)
+    // 학급 정보 가져오기 - classId가 없으면 사용자의 첫 번째 학급 사용
     let classData = null;
     if (classId) {
       const { data: cls, error: classError } = await supabase
@@ -49,24 +49,38 @@ export async function POST(request: Request) {
         .single();
       
       if (classError) {
-        console.error('Class lookup error:', classError);
+        console.error('Class lookup error with ID:', classError);
       } else {
         classData = cls;
+      }
+    } else {
+      // classId가 없으면 사용자의 첫 번째 학급 찾기
+      const { data: classes, error: classError } = await supabase
+        .from('classes')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      if (!classError && classes && classes.length > 0) {
+        classData = classes[0];
+        console.log('Using first class:', classData.class_name);
       }
     }
 
     // 학급 코드가 있으면 그것을 사용, 없으면 간단한 설문 공유 코드 생성
     let accessCode = '';
     let surveyUrl = '';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://planetweb.vercel.app';
     
     if (classData && classData.school_code) {
       // 학급 코드를 사용한 URL
       accessCode = classData.school_code;
-      surveyUrl = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/student/survey/${surveyId}?code=${accessCode}`;
+      surveyUrl = `${baseUrl}/student/survey/${surveyId}?code=${accessCode}`;
     } else {
       // 간단한 공유 코드 생성 (6자리)
       accessCode = 'S' + Math.random().toString(36).substring(2, 7).toUpperCase();
-      surveyUrl = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/student/survey/${surveyId}?share=${accessCode}`;
+      surveyUrl = `${baseUrl}/student/survey/${surveyId}?share=${accessCode}`;
     }
 
     return NextResponse.json({
@@ -84,7 +98,10 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('설문 접근 코드 생성 오류:', error);
-    return NextResponse.json({ error: '접근 코드 생성에 실패했습니다.' }, { status: 500 });
+    return NextResponse.json({ 
+      error: '접근 코드 생성에 실패했습니다.',
+      details: error instanceof Error ? error.message : '알 수 없는 오류'
+    }, { status: 500 });
   }
 }
 
