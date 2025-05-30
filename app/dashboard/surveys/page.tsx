@@ -52,6 +52,32 @@ interface ClassInfo {
   students: Array<{ number: number; name: string }>
 }
 
+// 평면 배열 형태의 questions를 구조화된 형태로 변환
+function transformQuestions(questions: any) {
+  // 이미 구조화된 형태인 경우 그대로 반환
+  if (questions && typeof questions === 'object' && !Array.isArray(questions)) {
+    return questions
+  }
+  
+  // 평면 배열인 경우 변환
+  if (Array.isArray(questions)) {
+    return {
+      multipleChoice: questions.filter((q: any) => q.type === 'multiple_choice').map((q: any) => ({
+        question: q.question,
+        options: q.options || [],
+        guideline: q.guideline
+      })),
+      shortAnswer: questions.filter((q: any) => q.type === 'short_answer').map((q: any) => ({
+        question: q.question,
+        guideline: q.guideline
+      }))
+    }
+  }
+  
+  // 빈 구조 반환
+  return { multipleChoice: [], shortAnswer: [] }
+}
+
 export default function SurveysPage() {
   const { user } = useAuth()
   const [surveys, setSurveys] = useState<Survey[]>([])
@@ -79,12 +105,20 @@ export default function SurveysPage() {
       if (response.ok) {
         const data = await response.json()
         if (data.success && Array.isArray(data.data)) {
-          serverSurveys = data.data
+          // 서버에서 가져온 설문의 questions를 구조화된 형태로 변환
+          serverSurveys = data.data.map((survey: any) => ({
+            ...survey,
+            questions: transformQuestions(survey.questions)
+          }))
         }
       }
       
       // 로컬 저장소에서 저장된 설문들도 가져오기
-      const localSurveys = JSON.parse(localStorage.getItem('saved_surveys') || '[]')
+      const rawLocalSurveys = JSON.parse(localStorage.getItem('saved_surveys') || '[]')
+      const localSurveys = rawLocalSurveys.map((survey: any) => ({
+        ...survey,
+        questions: transformQuestions(survey.questions)
+      }))
       
       // 서버 설문과 로컬 설문을 합치기
       const allSurveys = [...serverSurveys, ...localSurveys]
@@ -107,7 +141,11 @@ export default function SurveysPage() {
       console.error('Error fetching surveys:', error)
       
       // 서버 오류시 로컬 저장소의 설문만이라도 표시
-      const localSurveys = JSON.parse(localStorage.getItem('saved_surveys') || '[]')
+      const rawLocalSurveys = JSON.parse(localStorage.getItem('saved_surveys') || '[]')
+      const localSurveys = rawLocalSurveys.map((survey: any) => ({
+        ...survey,
+        questions: transformQuestions(survey.questions)
+      }))
       setSurveys(localSurveys)
       setHasLocalSurveys(localSurveys.length > 0)
     } finally {
