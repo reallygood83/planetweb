@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { EvaluationPlan } from '@/lib/types/evaluation'
-import { X, Sparkles, Loader2 } from 'lucide-react'
+import { X, Sparkles, Loader2, BookOpen } from 'lucide-react'
 
 interface GeneratedSurvey {
   title: string
@@ -25,24 +25,57 @@ interface GeneratedSurvey {
 interface GenerateSurveyModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  evaluationPlan: EvaluationPlan | null
+  evaluationPlan?: EvaluationPlan | null  // 선택사항으로 변경
   onSuccess: (survey: any) => void
 }
 
 export function GenerateSurveyModal({ 
   open, 
   onOpenChange, 
-  evaluationPlan, 
+  evaluationPlan: initialPlan, 
   onSuccess 
 }: GenerateSurveyModalProps) {
   const [customTitle, setCustomTitle] = useState('')
   const [generatedSurvey, setGeneratedSurvey] = useState<GeneratedSurvey | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [step, setStep] = useState<'generate' | 'preview' | 'save'>('generate')
+  const [step, setStep] = useState<'select' | 'generate' | 'preview'>('select')
+  
+  // 평가 계획 선택 관련 상태
+  const [availablePlans, setAvailablePlans] = useState<EvaluationPlan[]>([])
+  const [selectedPlan, setSelectedPlan] = useState<EvaluationPlan | null>(initialPlan || null)
+  const [plansLoading, setPlansLoading] = useState(false)
+
+  // 평가 계획 목록 불러오기
+  useEffect(() => {
+    if (open && !initialPlan) {
+      fetchEvaluationPlans()
+    } else if (initialPlan) {
+      setSelectedPlan(initialPlan)
+      setStep('generate')
+    }
+  }, [open, initialPlan])
+
+  const fetchEvaluationPlans = async () => {
+    setPlansLoading(true)
+    try {
+      const response = await fetch('/api/evaluations')
+      const data = await response.json()
+      
+      if (data.success) {
+        setAvailablePlans(data.data)
+      } else {
+        setError('평가 계획을 불러올 수 없습니다.')
+      }
+    } catch {
+      setError('평가 계획을 불러오는 중 오류가 발생했습니다.')
+    } finally {
+      setPlansLoading(false)
+    }
+  }
 
   const handleGenerate = async () => {
-    if (!evaluationPlan) return
+    if (!selectedPlan) return
 
     const encryptedKey = localStorage.getItem('gemini_api_key')
     if (!encryptedKey) {
@@ -72,7 +105,7 @@ export function GenerateSurveyModal({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          evaluationPlan,
+          evaluationPlan: selectedPlan,
           apiKey: apiKey
         }),
       })
@@ -94,7 +127,7 @@ export function GenerateSurveyModal({
   }
 
   const handleSave = async () => {
-    if (!generatedSurvey || !evaluationPlan) return
+    if (!generatedSurvey || !selectedPlan) return
 
     setLoading(true)
     setError(null)
@@ -107,7 +140,7 @@ export function GenerateSurveyModal({
         },
         body: JSON.stringify({
           title: customTitle || generatedSurvey.title,
-          evaluation_plan_id: evaluationPlan.id,
+          evaluation_plan_id: selectedPlan.id,
           questions: generatedSurvey.questions,
           is_active: true
         }),
@@ -129,14 +162,15 @@ export function GenerateSurveyModal({
   }
 
   const handleClose = () => {
-    setStep('generate')
+    setStep(initialPlan ? 'generate' : 'select')
     setGeneratedSurvey(null)
     setCustomTitle('')
     setError(null)
+    setSelectedPlan(initialPlan || null)
     onOpenChange(false)
   }
 
-  if (!open || !evaluationPlan) return null
+  if (!open) return null
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -151,20 +185,103 @@ export function GenerateSurveyModal({
           </Button>
         </div>
 
-        {/* 평가계획 정보 */}
-        <div className="bg-blue-50 p-4 rounded-lg mb-6">
-          <h3 className="font-semibold text-blue-900">평가계획 정보</h3>
-          <p className="text-blue-800">
-            {evaluationPlan.subject} • {evaluationPlan.grade} • {evaluationPlan.semester}
-          </p>
-          <p className="text-sm text-blue-700 mt-1">
-            {evaluationPlan.unit} {evaluationPlan.lesson && `• ${evaluationPlan.lesson}`}
-          </p>
-        </div>
+        {/* 평가계획 정보 (선택되었을 때만) */}
+        {selectedPlan && (
+          <div className="bg-blue-50 p-4 rounded-lg mb-6">
+            <h3 className="font-semibold text-blue-900">선택된 평가계획</h3>
+            <p className="text-blue-800">
+              {selectedPlan.subject} • {selectedPlan.grade} • {selectedPlan.semester}
+            </p>
+            <p className="text-sm text-blue-700 mt-1">
+              {selectedPlan.unit} {selectedPlan.lesson && `• ${selectedPlan.lesson}`}
+            </p>
+          </div>
+        )}
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
             {error}
+          </div>
+        )}
+
+        {step === 'select' && (
+          <div className="space-y-4">
+            <div className="text-center py-4">
+              <BookOpen className="h-16 w-16 text-blue-600 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">평가계획을 선택하세요</h3>
+              <p className="text-gray-600 mb-6">
+                설문을 생성할 평가계획을 선택해주세요.
+                <br />
+                선택한 평가계획의 성취기준과 평가방법을 바탕으로 AI가 자기평가 설문을 생성합니다.
+              </p>
+            </div>
+
+            {plansLoading ? (
+              <div className="text-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+                <p className="text-gray-600">평가계획을 불러오는 중...</p>
+              </div>
+            ) : availablePlans.length === 0 ? (
+              <div className="text-center py-8">
+                <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  생성된 평가계획이 없습니다
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  먼저 평가계획을 생성해주세요
+                </p>
+                <Button onClick={handleClose} variant="outline">
+                  평가계획 만들러 가기
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                {availablePlans.map((plan) => (
+                  <div
+                    key={plan.id}
+                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                      selectedPlan?.id === plan.id
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                    }`}
+                    onClick={() => setSelectedPlan(plan)}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900">
+                          {plan.subject} • {plan.grade} • {plan.semester}
+                        </h4>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {plan.unit} {plan.lesson && `• ${plan.lesson}`}
+                        </p>
+                        {plan.learning_objectives && plan.learning_objectives.length > 0 && (
+                          <p className="text-xs text-gray-500 mt-2">
+                            {plan.learning_objectives[0].substring(0, 100)}
+                            {plan.learning_objectives[0].length > 100 ? '...' : ''}
+                          </p>
+                        )}
+                      </div>
+                      {selectedPlan?.id === plan.id && (
+                        <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center ml-2">
+                          <div className="w-2 h-2 bg-white rounded-full"></div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {selectedPlan && availablePlans.length > 0 && (
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button variant="outline" onClick={handleClose}>
+                  취소
+                </Button>
+                <Button onClick={() => setStep('generate')}>
+                  선택 완료
+                </Button>
+              </div>
+            )}
           </div>
         )}
 

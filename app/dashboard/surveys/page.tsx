@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/auth-context'
+import { GenerateSurveyModal } from '@/components/evaluation/GenerateSurveyModal'
 import { 
   FileText, 
   Users, 
@@ -57,6 +58,7 @@ export default function SurveysPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null)
   const [hasLocalSurveys, setHasLocalSurveys] = useState(false)
+  const [showGenerateModal, setShowGenerateModal] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -164,6 +166,12 @@ export default function SurveysPage() {
     alert(`학생 접속 링크가 복사되었습니다!\n\n학급 코드: ${classInfo.school_code}\n링크: ${studentUrl}`)
   }
 
+  const handleSurveyGenerated = (newSurvey: any) => {
+    setSurveys(prev => [newSurvey, ...prev])
+    setShowGenerateModal(false)
+    alert('새 설문이 생성되었습니다!')
+  }
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ko-KR', {
       year: 'numeric',
@@ -201,7 +209,7 @@ export default function SurveysPage() {
         </div>
         <div className="flex gap-2">
           <Button 
-            onClick={() => window.location.href = '/dashboard/generate'}
+            onClick={() => setShowGenerateModal(true)}
             className="flex items-center gap-2"
           >
             <FileText className="h-4 w-4" />
@@ -293,7 +301,7 @@ export default function SurveysPage() {
             <p className="text-gray-500 mb-4">
               첫 번째 자기평가 설문을 생성해보세요
             </p>
-            <Button onClick={() => window.location.href = '/dashboard/generate'}>
+            <Button onClick={() => setShowGenerateModal(true)}>
               설문 생성하기
             </Button>
           </CardContent>
@@ -458,6 +466,13 @@ export default function SurveysPage() {
           </div>
         </div>
       )}
+
+      {/* Generate Survey Modal */}
+      <GenerateSurveyModal
+        open={showGenerateModal}
+        onOpenChange={setShowGenerateModal}
+        onSuccess={handleSurveyGenerated}
+      />
     </div>
   )
 }
