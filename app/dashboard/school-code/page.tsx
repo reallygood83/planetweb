@@ -29,6 +29,12 @@ interface SchoolCode {
     target_grade?: string
     primary_subject?: string
   }
+  members?: Array<{
+    user_id: string
+    email: string
+    role: string
+    joined_at: string
+  }>
   role?: 'creator' | 'admin' | 'member'
   created_at: string
   updated_at: string
@@ -57,7 +63,7 @@ export default function SchoolCodePage() {
   const fetchSchoolCodes = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/school-codes-new')
+      const response = await fetch('/api/school-codes-simple')
       const data = await response.json()
 
       if (data.success) {
@@ -79,7 +85,7 @@ export default function SchoolCodePage() {
     primary_subject?: string
   }) => {
     try {
-      const response = await fetch('/api/school-codes-new', {
+      const response = await fetch('/api/school-codes-simple', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -111,7 +117,7 @@ export default function SchoolCodePage() {
 
     setJoining(true)
     try {
-      const response = await fetch('/api/school-codes-new/join', {
+      const response = await fetch('/api/school-codes-simple/join', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -298,6 +304,10 @@ export default function SchoolCodePage() {
                   {code.settings?.primary_subject && (
                     <div>{code.settings.primary_subject}</div>
                   )}
+                  <div className="flex items-center gap-1">
+                    <UserPlus className="h-4 w-4" />
+                    {(code.members?.length || 0) + 1}명 참여 {/* +1 for creator */}
+                  </div>
                   <div className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
                     {new Date(code.created_at).toLocaleDateString('ko-KR')}
