@@ -18,11 +18,17 @@ export async function GET() {
 
     console.log('사용자 확인됨:', user.email)
 
-    // 학교 코드 조회 (테이블이 없어도 에러 처리)
+    // 학교 그룹 조회 
     const { data: schoolCodes, error } = await supabase
-      .from('school_codes')
-      .select('*')
-      .or(`creator_id.eq.${user.id},members.cs.["${user.email}"]`)
+      .from('school_groups')
+      .select(`
+        *,
+        group_memberships!inner(
+          user_id,
+          role
+        )
+      `)
+      .eq('group_memberships.user_id', user.id)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -150,7 +156,7 @@ export async function POST(request: NextRequest) {
       
       // 중복 검사
       const { data: existing, error: checkError } = await supabase
-        .from('school_codes')
+        .from('school_groups')
         .select('id')
         .eq('code', code)
         .maybeSingle()
@@ -184,7 +190,7 @@ export async function POST(request: NextRequest) {
         
         // 중복 확인
         const { data: existing, error: checkError } = await supabase
-          .from('school_codes')
+          .from('school_groups')
           .select('id')
           .eq('code', code)
           .maybeSingle()
@@ -219,22 +225,22 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 학교 코드 생성
+    // 학교 그룹 생성
     const newData = {
       code,
-      group_name,
+      name: group_name,
       description,
       school_name,
-      target_grade: target_grade || null,
-      primary_subject: primary_subject || null,
       creator_id: user.id,
-      creator_email: user.email,
-      members: [user.email]
+      settings: {
+        target_grade: target_grade || null,
+        primary_subject: primary_subject || null
+      }
     }
 
     console.log('데이터베이스에 삽입 시도...')
-    const { data: newSchoolCode, error: createError } = await supabase
-      .from('school_codes')
+    const { data: newSchoolGroup, error: createError } = await supabase
+      .from('school_groups')
       .insert([newData])
       .select()
       .single()
@@ -256,7 +262,17 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('학교 코드 생성 성공:', code)
-    return NextResponse.json({ success: true, data: newSchoolCode }, { status: 201 })
+    
+    // 그룹 멤버십 추가
+    await supabase
+      .from('group_memberships')
+      .insert({
+        group_id: newSchoolGroup.id,
+        user_id: user.id,
+        role: 'admin'
+      })
+    
+    return NextResponse.json({ success: true, data: newSchoolGroup }, { status: 201 })
     
   } catch (error: any) {
     console.error('학교 코드 POST 오류:', error)

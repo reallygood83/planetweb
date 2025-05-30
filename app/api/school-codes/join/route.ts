@@ -16,21 +16,21 @@ export async function POST(request: NextRequest) {
     const { code } = body
 
     // 필수 필드 검증
-    if (!code || code.length !== 6) {
+    if (!code || code.length < 4 || code.length > 10) {
       return NextResponse.json(
-        { error: 'Valid 6-character code is required' }, 
+        { error: 'Valid 4-10 character code is required' }, 
         { status: 400 }
       )
     }
 
-    // 학교 코드 확인
-    const { data: schoolCode, error: fetchError } = await supabase
-      .from('school_codes')
+    // 학교 그룹 확인
+    const { data: schoolGroup, error: fetchError } = await supabase
+      .from('school_groups')
       .select('*')
       .eq('code', code.toUpperCase())
       .single()
 
-    if (fetchError || !schoolCode) {
+    if (fetchError || !schoolGroup) {
       return NextResponse.json(
         { error: 'Invalid school code' }, 
         { status: 404 }
@@ -38,7 +38,14 @@ export async function POST(request: NextRequest) {
     }
 
     // 이미 멤버인지 확인
-    if (schoolCode.members && schoolCode.members.includes(user.email)) {
+    const { data: existingMembership } = await supabase
+      .from('group_memberships')
+      .select('*')
+      .eq('group_id', schoolGroup.id)
+      .eq('user_id', user.id)
+      .single()
+    
+    if (existingMembership) {
       return NextResponse.json(
         { error: 'You are already a member of this group' }, 
         { status: 400 }
@@ -46,15 +53,13 @@ export async function POST(request: NextRequest) {
     }
 
     // 멤버 추가
-    const updatedMembers = [...(schoolCode.members || []), user.email]
-    
-    const { data: updatedSchoolCode, error: updateError } = await supabase
-      .from('school_codes')
-      .update({ 
-        members: updatedMembers,
-        updated_at: new Date().toISOString()
+    const { data: membership, error: updateError } = await supabase
+      .from('group_memberships')
+      .insert({
+        group_id: schoolGroup.id,
+        user_id: user.id,
+        role: 'member'
       })
-      .eq('id', schoolCode.id)
       .select()
       .single()
 
@@ -65,8 +70,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ 
       success: true, 
-      data: updatedSchoolCode,
-      message: `Successfully joined ${schoolCode.group_name}`
+      data: { ...schoolGroup, membership },
+      message: `Successfully joined ${schoolGroup.name}`
     })
   } catch (error) {
     console.error('API Error:', error)
