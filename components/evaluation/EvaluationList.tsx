@@ -3,16 +3,17 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { EvaluationPlan } from '@/lib/types/evaluation'
-import { Trash2, Calendar, BookOpen, Sparkles, Target, Award, Edit } from 'lucide-react'
+import { Trash2, Calendar, BookOpen, Sparkles, Target, Award, Edit, Share2 } from 'lucide-react'
 
 interface EvaluationListProps {
   evaluations: EvaluationPlan[]
   onDelete: (evaluationId: string) => void
   onEdit?: (evaluation: EvaluationPlan) => void
   onGenerateSurvey?: (evaluation: EvaluationPlan) => void
+  onShare?: (evaluation: EvaluationPlan) => void
 }
 
-export function EvaluationList({ evaluations, onDelete, onEdit, onGenerateSurvey }: EvaluationListProps) {
+export function EvaluationList({ evaluations, onDelete, onEdit, onGenerateSurvey, onShare }: EvaluationListProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ko-KR')
   }
@@ -139,8 +140,15 @@ export function EvaluationList({ evaluations, onDelete, onEdit, onGenerateSurvey
                   <Sparkles className="h-3 w-3" />
                   설문 생성
                 </Button>
-                <Button variant="outline" size="sm" className="flex-1">
-                  편집
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1 flex items-center gap-1"
+                  onClick={() => onShare?.(evaluation)}
+                  disabled={!onShare}
+                >
+                  <Share2 className="h-3 w-3" />
+                  공유
                 </Button>
               </div>
             </div>

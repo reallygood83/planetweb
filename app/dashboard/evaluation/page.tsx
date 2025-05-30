@@ -9,6 +9,7 @@ import { CreateEvaluationModal } from '@/components/evaluation/CreateEvaluationM
 import { EditEvaluationModal } from '@/components/evaluation/EditEvaluationModal'
 import { SmartPasteModal } from '@/components/evaluation/SmartPasteModal'
 import { GenerateSurveyModal } from '@/components/evaluation/GenerateSurveyModal'
+import { ShareEvaluationModal } from '@/components/evaluation/ShareEvaluationModal'
 import { EvaluationPlan } from '@/lib/types/evaluation'
 import { Plus, FileText, Sparkles } from 'lucide-react'
 
@@ -21,6 +22,7 @@ export default function EvaluationPage() {
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [smartPasteOpen, setSmartPasteOpen] = useState(false)
   const [surveyModalOpen, setSurveyModalOpen] = useState(false)
+  const [shareModalOpen, setShareModalOpen] = useState(false)
   const [selectedEvaluation, setSelectedEvaluation] = useState<EvaluationPlan | null>(null)
 
   useEffect(() => {
@@ -120,6 +122,11 @@ export default function EvaluationPage() {
   const handleGenerateSurvey = (evaluation: EvaluationPlan) => {
     setSelectedEvaluation(evaluation)
     setSurveyModalOpen(true)
+  }
+
+  const handleShareEvaluation = (evaluation: EvaluationPlan) => {
+    setSelectedEvaluation(evaluation)
+    setShareModalOpen(true)
   }
 
   const handleSurveySuccess = () => {
@@ -230,6 +237,7 @@ export default function EvaluationPage() {
           onDelete={handleDeleteEvaluation}
           onEdit={handleEditEvaluation}
           onGenerateSurvey={handleGenerateSurvey}
+          onShare={handleShareEvaluation}
         />
       )}
 
@@ -257,6 +265,15 @@ export default function EvaluationPage() {
         onOpenChange={setSurveyModalOpen}
         evaluationPlan={selectedEvaluation}
         onSuccess={handleSurveySuccess}
+      />
+
+      <ShareEvaluationModal
+        evaluation={selectedEvaluation}
+        isOpen={shareModalOpen}
+        onClose={() => {
+          setShareModalOpen(false)
+          setSelectedEvaluation(null)
+        }}
       />
     </div>
   )
