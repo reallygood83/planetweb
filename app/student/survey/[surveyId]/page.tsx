@@ -56,21 +56,38 @@ function TakeSurveyContent() {
 
   useEffect(() => {
     const classCode = searchParams?.get('code')
+    const shareCode = searchParams?.get('share')
     const storedStudentInfo = sessionStorage.getItem('studentInfo')
 
-    if (!classCode || !storedStudentInfo) {
+    // 공유 코드로 접근한 경우 처리
+    if (shareCode && !storedStudentInfo) {
+      // 공유 코드로 접근했지만 학생 정보가 없는 경우
+      // 학생 정보 입력 페이지로 이동하되, 설문 ID와 공유 코드를 전달
+      router.push(`/student?surveyId=${params.surveyId}&share=${shareCode}`)
+      return
+    }
+
+    // 일반 학급 코드로 접근한 경우
+    if (!classCode && !shareCode) {
       router.push('/student')
       return
     }
 
-    const parsedStudentInfo = JSON.parse(storedStudentInfo)
-    if (parsedStudentInfo.classCode !== classCode) {
+    if (storedStudentInfo) {
+      const parsedStudentInfo = JSON.parse(storedStudentInfo)
+      
+      // 공유 코드로 접근한 경우는 학급 코드 검증 생략
+      if (classCode && parsedStudentInfo.classCode !== classCode) {
+        router.push('/student')
+        return
+      }
+      
+      setStudentInfo(parsedStudentInfo)
+      fetchSurvey()
+    } else if (!shareCode) {
+      // 학생 정보가 없고 공유 코드도 없는 경우
       router.push('/student')
-      return
     }
-
-    setStudentInfo(parsedStudentInfo)
-    fetchSurvey()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.surveyId, searchParams, router])
 
