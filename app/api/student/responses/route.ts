@@ -11,29 +11,54 @@ export async function POST(request: NextRequest) {
       responses 
     } = body
 
-    if (!surveyId || !studentName || !classCode || !responses) {
+    if (!surveyId || !studentName || !responses) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     const supabase = await createClient()
 
-    // Verify class code and get class info
-    const { data: classData, error: classError } = await supabase
-      .from('classes')
-      .select('id, user_id')
-      .eq('code', classCode)
-      .single()
+    // 공유 코드인지 학급 코드인지 확인
+    let classData = null
+    let surveyUserId = null
+    
+    if (classCode && classCode.startsWith('S')) {
+      // 공유 코드로 접근한 경우 - 설문 정보에서 직접 user_id 가져오기
+      const { data: surveyInfo, error: surveyError } = await supabase
+        .from('surveys')
+        .select('id, user_id')
+        .eq('id', surveyId)
+        .single()
+      
+      if (surveyError || !surveyInfo) {
+        return NextResponse.json({ error: 'Invalid survey' }, { status: 404 })
+      }
+      
+      surveyUserId = surveyInfo.user_id
+    } else if (classCode) {
+      // 학급 코드로 접근한 경우
+      const { data: classInfo, error: classError } = await supabase
+        .from('classes')
+        .select('id, user_id')
+        .eq('school_code', classCode)
+        .single()
 
-    if (classError || !classData) {
-      return NextResponse.json({ error: 'Invalid class code' }, { status: 404 })
+      if (classError || !classInfo) {
+        console.error('Class lookup error:', classError)
+        return NextResponse.json({ error: 'Invalid class code' }, { status: 404 })
+      }
+      
+      classData = classInfo
+      surveyUserId = classInfo.user_id
+    } else {
+      return NextResponse.json({ error: 'Class code is required' }, { status: 400 })
     }
 
-    // Verify survey exists and belongs to the class teacher
+    // Verify survey exists and belongs to the user
     const { data: surveyData, error: surveyError } = await supabase
       .from('surveys')
       .select('id, user_id')
       .eq('id', surveyId)
-      .eq('user_id', classData.user_id)
+      .eq('user_id', surveyUserId)
       .single()
 
     if (surveyError || !surveyData) {
@@ -46,7 +71,6 @@ export async function POST(request: NextRequest) {
       .select('id')
       .eq('survey_id', surveyId)
       .eq('student_name', studentName)
-      .eq('class_id', classData.id)
       .single()
 
     if (existingResponse) {
@@ -54,15 +78,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Save response
+    const responseData = {
+      survey_id: surveyId,
+      student_name: studentName,
+      class_name: classData ? `${classCode}` : '공유 링크',
+      responses: responses,
+      submitted_at: new Date().toISOString()
+    }
+
     const { data, error } = await supabase
       .from('survey_responses')
-      .insert({
-        survey_id: surveyId,
-        class_id: classData.id,
-        student_name: studentName,
-        responses: responses,
-        submitted_at: new Date().toISOString()
-      })
+      .insert(responseData)
       .select()
       .single()
 
