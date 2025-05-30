@@ -61,7 +61,39 @@ export async function POST(request: NextRequest) {
   try {
     console.log('=== 학교 코드 생성 시작 ===')
     
-    const body = await request.json()
+    // 환경 변수 확인
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    
+    console.log('Supabase URL 존재:', !!supabaseUrl)
+    console.log('Supabase Key 존재:', !!supabaseKey)
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('환경 변수 누락:', { supabaseUrl: !!supabaseUrl, supabaseKey: !!supabaseKey })
+      return NextResponse.json({ 
+        error: 'Database configuration missing',
+        details: 'Supabase environment variables not set'
+      }, { status: 503 })
+    }
+    
+    if (supabaseUrl.includes('placeholder')) {
+      console.error('Supabase URL이 placeholder 상태')
+      return NextResponse.json({ 
+        error: 'Database not configured',
+        details: 'Please configure Supabase connection'
+      }, { status: 503 })
+    }
+    
+    // 요청 본문 파싱 테스트
+    let body
+    try {
+      body = await request.json()
+      console.log('요청 본문:', JSON.stringify(body, null, 2))
+    } catch (parseError) {
+      console.error('JSON 파싱 오류:', parseError)
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 })
+    }
+    
     const { code: manualCode, group_name, description, school_name, target_grade, primary_subject } = body
 
     // 필수 필드 검증
@@ -72,15 +104,34 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
+    // Supabase 클라이언트 생성 테스트
+    let supabase
+    try {
+      supabase = await createClient()
+      console.log('Supabase 클라이언트 생성 성공')
+    } catch (supabaseError) {
+      console.error('Supabase 클라이언트 생성 오류:', supabaseError)
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })
+    }
     
     // 현재 사용자 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    let user
+    try {
+      const { data: userData, error: authError } = await supabase.auth.getUser()
+      if (authError) {
+        console.error('인증 오류:', authError)
+        return NextResponse.json({ error: 'Authentication failed', details: authError.message }, { status: 401 })
+      }
+      if (!userData?.user) {
+        console.log('사용자 없음')
+        return NextResponse.json({ error: 'User not found' }, { status: 401 })
+      }
+      user = userData.user
+      console.log('사용자 확인됨:', user.email)
+    } catch (userError) {
+      console.error('사용자 조회 오류:', userError)
+      return NextResponse.json({ error: 'User verification failed' }, { status: 500 })
     }
-
-    console.log('사용자 확인됨:', user.email)
 
     let code = ''
     
@@ -209,9 +260,20 @@ export async function POST(request: NextRequest) {
     
   } catch (error: any) {
     console.error('학교 코드 POST 오류:', error)
+    console.error('오류 스택:', error.stack)
+    
+    // 더 자세한 오류 정보 제공
+    const errorMessage = '서버 오류가 발생했습니다.'
+    let errorDetails = error.message
+    
+    if (error.code) {
+      errorDetails += ` (Code: ${error.code})`
+    }
+    
     return NextResponse.json({ 
-      error: '서버 오류가 발생했습니다.',
-      details: error.message 
+      error: errorMessage,
+      details: errorDetails,
+      timestamp: new Date().toISOString()
     }, { status: 500 })
   }
 }

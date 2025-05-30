@@ -50,6 +50,20 @@ export async function POST(request: NextRequest) {
   try {
     console.log('=== 학급 생성 시작 ===')
     
+    // 환경 변수 확인
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    
+    console.log('Supabase URL 존재:', !!supabaseUrl)
+    console.log('Supabase Key 존재:', !!supabaseKey)
+    
+    if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('placeholder')) {
+      return NextResponse.json({ 
+        error: 'Database not configured',
+        details: 'Please configure Supabase connection'
+      }, { status: 503 })
+    }
+    
     const body = await request.json()
     const { class_name, grade, semester, teacher, students = [], school_code: manualSchoolCode } = body
 
