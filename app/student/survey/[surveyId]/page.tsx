@@ -27,7 +27,7 @@ interface Survey {
   id: string
   title: string
   questions: Question
-  evaluation_plans: {
+  evaluation_plans?: {
     subject: string
     grade: string
     semester: string
@@ -99,7 +99,30 @@ function TakeSurveyContent() {
       }
       
       const data = await response.json()
-      setSurvey(data)
+      console.log('Fetched survey data:', data)
+      
+      // API 응답 형식 확인
+      let surveyData = data.success && data.data ? data.data : data
+      
+      // questions 형식 변환 (필요한 경우)
+      if (surveyData.questions && Array.isArray(surveyData.questions)) {
+        surveyData = {
+          ...surveyData,
+          questions: {
+            multipleChoice: surveyData.questions.filter((q: any) => q.type === 'multiple_choice').map((q: any) => ({
+              question: q.question,
+              options: q.options || [],
+              guideline: q.guideline
+            })),
+            shortAnswer: surveyData.questions.filter((q: any) => q.type === 'short_answer').map((q: any) => ({
+              question: q.question,
+              guideline: q.guideline
+            }))
+          }
+        }
+      }
+      
+      setSurvey(surveyData)
     } catch (error) {
       console.error('Error fetching survey:', error)
       alert('설문을 불러오는 중 오류가 발생했습니다.')
@@ -241,9 +264,11 @@ function TakeSurveyContent() {
                 <BookOpen className="h-8 w-8 text-white" />
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">{survey.title}</h1>
-              <Badge variant="secondary">
-                {survey.evaluation_plans.subject} | {survey.evaluation_plans.grade} | {survey.evaluation_plans.semester}
-              </Badge>
+              {survey.evaluation_plans && (
+                <Badge variant="secondary">
+                  {survey.evaluation_plans.subject} | {survey.evaluation_plans.grade} | {survey.evaluation_plans.semester}
+                </Badge>
+              )}
             </div>
 
             {/* Progress */}
