@@ -7,10 +7,12 @@ export async function GET() {
   try {
     console.log('=== 학교 코드 조회 시작 ===')
     
-    const supabase = await createClient()
+    // Service Role 클라이언트 사용
+    const serviceSupabase = await createServiceClient()
     
-    // 현재 사용자 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // 일반 클라이언트로 사용자 인증만 확인
+    const tempSupabase = await createClient()
+    const { data: { user }, error: authError } = await tempSupabase.auth.getUser()
     if (authError || !user) {
       console.log('인증 오류 또는 사용자 없음')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -22,7 +24,6 @@ export async function GET() {
     console.log('데이터베이스 조회 시도...')
     
     // Service Role 클라이언트로 멤버십 조회 (정책 우회)
-    const serviceSupabase = await createServiceClient()
     const { data: memberships, error: membershipError } = await serviceSupabase
       .from('group_memberships')
       .select('group_id')
@@ -151,20 +152,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Supabase 클라이언트 생성 테스트
-    let supabase
+    // Service Role 클라이언트 생성
+    let serviceSupabase
     try {
-      supabase = await createClient()
-      console.log('Supabase 클라이언트 생성 성공')
+      serviceSupabase = await createServiceClient()
+      console.log('Service Role 클라이언트 생성 성공')
     } catch (supabaseError) {
-      console.error('Supabase 클라이언트 생성 오류:', supabaseError)
+      console.error('Service Role 클라이언트 생성 오류:', supabaseError)
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })
     }
     
-    // 현재 사용자 확인
+    // 현재 사용자 확인 (인증용 일반 클라이언트)
     let user
     try {
-      const { data: userData, error: authError } = await supabase.auth.getUser()
+      const tempSupabase = await createClient()
+      const { data: userData, error: authError } = await tempSupabase.auth.getUser()
       if (authError) {
         console.error('인증 오류:', authError)
         return NextResponse.json({ error: 'Authentication failed', details: authError.message }, { status: 401 })
@@ -196,7 +198,6 @@ export async function POST(request: NextRequest) {
       console.log('수동 입력 코드:', code)
       
       // 중복 검사
-      const serviceSupabase = await createServiceClient()
       const { data: existing, error: checkError } = await serviceSupabase
         .from('school_groups')
         .select('id')
@@ -231,7 +232,6 @@ export async function POST(request: NextRequest) {
         console.log(`코드 생성 시도 ${attempts}: ${code}`)
         
         // 중복 확인
-        const serviceSupabase = await createServiceClient()
         const { data: existing, error: checkError } = await serviceSupabase
           .from('school_groups')
           .select('id')
@@ -282,7 +282,6 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('데이터베이스에 삽입 시도...')
-    const serviceSupabase = await createServiceClient()
     const { data: newSchoolGroup, error: createError } = await serviceSupabase
       .from('school_groups')
       .insert([newData])

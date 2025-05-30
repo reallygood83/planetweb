@@ -4,10 +4,12 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 // POST: 학교 코드 참여
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    // Service Role 클라이언트 사용
+    const serviceSupabase = await createServiceClient()
     
-    // 현재 사용자 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // 현재 사용자 확인 (인증용)
+    const tempSupabase = await createClient()
+    const { data: { user }, error: authError } = await tempSupabase.auth.getUser()
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -24,7 +26,6 @@ export async function POST(request: NextRequest) {
     }
 
     // 학교 그룹 확인
-    const serviceSupabase = await createServiceClient()
     const { data: schoolGroup, error: fetchError } = await serviceSupabase
       .from('school_groups')
       .select('*')
