@@ -249,9 +249,32 @@ export async function POST(request: NextRequest) {
         throw new Error('Invalid survey structure')
       }
 
+      // AI 응답을 프론트엔드가 기대하는 형식으로 변환
+      const transformedData = {
+        title: parsedData.title,
+        description: parsedData.description || '',
+        questions: {
+          multipleChoice: parsedData.questions
+            .filter((q: any) => q.type === 'multiple_choice')
+            .map((q: any) => ({
+              question: q.question,
+              options: q.options || [],
+              guideline: q.guideline
+            })),
+          shortAnswer: parsedData.questions
+            .filter((q: any) => q.type === 'short_answer')
+            .map((q: any) => ({
+              question: q.question,
+              guideline: q.guideline
+            }))
+        }
+      }
+
+      console.log('Transformed survey data:', JSON.stringify(transformedData, null, 2))
+
       return NextResponse.json({ 
         success: true, 
-        data: parsedData,
+        data: transformedData,
         rawResponse: aiResponse 
       })
     } catch (parseError) {

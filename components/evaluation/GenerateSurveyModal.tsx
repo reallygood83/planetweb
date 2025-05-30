@@ -113,12 +113,15 @@ export function GenerateSurveyModal({
       })
 
       const data = await response.json()
+      console.log('Survey generation response:', data)
 
       if (data.success) {
+        console.log('Generated survey data:', data.data)
         setGeneratedSurvey(data.data)
         setCustomTitle(data.data.title)
         setStep('preview')
       } else {
+        console.error('Survey generation failed:', data.error)
         setError(data.error || 'AI 설문 생성에 실패했습니다.')
       }
     } catch {
