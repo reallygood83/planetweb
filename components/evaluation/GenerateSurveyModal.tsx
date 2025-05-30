@@ -138,39 +138,48 @@ export function GenerateSurveyModal({
     setError(null)
 
     try {
+      const questionsData = [
+        // 객관식 문항들을 평면 배열로 변환
+        ...(generatedSurvey.questions?.multipleChoice || []).map((q: any) => ({
+          type: 'multiple_choice',
+          question: q.question,
+          options: q.options,
+          guideline: q.guideline
+        })),
+        // 주관식 문항들을 평면 배열로 변환
+        ...(generatedSurvey.questions?.shortAnswer || []).map((q: any) => ({
+          type: 'short_answer',
+          question: q.question,
+          guideline: q.guideline
+        }))
+      ]
+
+      const requestData = {
+        title: customTitle || generatedSurvey.title,
+        evaluation_plan_id: selectedPlan.id,
+        questions: questionsData,
+        is_active: true
+      }
+
+      console.log('Saving survey with data:', requestData)
+
       const response = await fetch('/api/surveys', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          title: customTitle || generatedSurvey.title,
-          evaluation_plan_id: selectedPlan.id,
-          questions: [
-            // 객관식 문항들을 평면 배열로 변환
-            ...(generatedSurvey.questions?.multipleChoice || []).map((q: any) => ({
-              type: 'multiple_choice',
-              question: q.question,
-              options: q.options,
-              guideline: q.guideline
-            })),
-            // 주관식 문항들을 평면 배열로 변환
-            ...(generatedSurvey.questions?.shortAnswer || []).map((q: any) => ({
-              type: 'short_answer',
-              question: q.question,
-              guideline: q.guideline
-            }))
-          ],
-          is_active: true
-        }),
+        body: JSON.stringify(requestData),
       })
 
       const data = await response.json()
+      console.log('Survey save response:', data)
+      console.log('Response status:', response.status)
 
       if (data.success) {
         onSuccess(data.data)
         handleClose()
       } else {
+        console.error('Survey save failed:', data)
         setError(data.error || '설문 저장에 실패했습니다.')
       }
     } catch {
