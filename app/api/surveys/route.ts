@@ -130,7 +130,17 @@ export async function POST(request: NextRequest) {
         lesson: evaluation_plan.lesson || null,
         learning_objectives: evaluation_plan.learningObjectives ? [evaluation_plan.learningObjectives] : [],
         achievement_standards: evaluation_plan.achievementStandards ? [evaluation_plan.achievementStandards] : [],
-        evaluation_criteria: evaluation_plan.evaluationCriteria || null
+        evaluation_criteria: evaluation_plan.evaluationCriteria ? {
+          excellent: { level: '매우잘함', description: evaluation_plan.evaluationCriteria.excellent || '' },
+          good: { level: '잘함', description: evaluation_plan.evaluationCriteria.good || '' },
+          satisfactory: { level: '보통', description: evaluation_plan.evaluationCriteria.average || '' },
+          needs_improvement: { level: '노력요함', description: evaluation_plan.evaluationCriteria.needsImprovement || '' }
+        } : {
+          excellent: { level: '매우잘함', description: '' },
+          good: { level: '잘함', description: '' },
+          satisfactory: { level: '보통', description: '' },
+          needs_improvement: { level: '노력요함', description: '' }
+        }
       }
       
       console.log('Evaluation plan data:', planData)

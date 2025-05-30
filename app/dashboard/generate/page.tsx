@@ -116,6 +116,15 @@ export default function GeneratePage() {
         body: JSON.stringify(surveyData)
       })
 
+      console.log('Response status:', response.status)
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('HTTP error response:', errorText)
+        throw new Error(`HTTP ${response.status}: ${errorText}`)
+      }
+
       const data = await response.json()
 
       if (data.success) {
@@ -140,8 +149,11 @@ export default function GeneratePage() {
         window.location.href = '/dashboard/surveys'
       } else {
         const errorMessage = data.message || data.error || '알 수 없는 오류'
-        alert('설문 저장에 실패했습니다: ' + errorMessage)
-        console.error('Survey save error:', data)
+        console.error('=== Survey save failed ===')
+        console.error('Full error response:', data)
+        console.error('Error message:', errorMessage)
+        console.error('Survey data sent:', surveyData)
+        alert('설문 저장에 실패했습니다: ' + errorMessage + '\n\n자세한 정보는 개발자 도구 콘솔을 확인하세요.')
       }
     } catch (error) {
       console.error('Error saving survey:', error)
