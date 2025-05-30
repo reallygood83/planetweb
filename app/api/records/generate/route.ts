@@ -47,12 +47,23 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    console.log('Request body received:', body)
+    
     const { 
       responseId,
       recordType = '교과학습발달상황',
       teacherNotes = '',
       includeEvaluationCriteria = true
     } = body
+
+    // 필수 필드 검증
+    if (!responseId) {
+      console.error('Missing responseId in request')
+      return NextResponse.json({ 
+        success: false,
+        error: 'responseId is required' 
+      }, { status: 400 })
+    }
 
     // 응답 데이터 조회
     const { data: responseData, error: responseError } = await supabase
@@ -77,8 +88,21 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (responseError || !responseData) {
-      return NextResponse.json({ error: 'Response not found' }, { status: 404 })
+      console.error('Response lookup error:', responseError)
+      console.error('ResponseId:', responseId)
+      return NextResponse.json({ 
+        success: false,
+        error: 'Response not found',
+        details: responseError?.message || 'No response data found'
+      }, { status: 404 })
     }
+
+    console.log('Response data found:', {
+      id: responseData.id,
+      student_name: responseData.student_name,
+      has_survey: !!responseData.surveys,
+      has_evaluation_plan: !!responseData.surveys?.evaluation_plans
+    })
 
     // 학생의 평가 결과 조회 (있는 경우)
     let evaluationResults: any[] = []
@@ -126,6 +150,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!apiKey) {
+      console.error('No API key available - user profile:', !!profile, 'encrypted key:', !!profile?.encrypted_api_key)
       return NextResponse.json({ 
         success: false, 
         error: 'API key not configured. Please set your API key in the dashboard.' 
@@ -134,11 +159,14 @@ export async function POST(request: NextRequest) {
 
     // API 키 형식 검증
     if (!apiKey.startsWith('AIza')) {
+      console.error('Invalid API key format:', apiKey.substring(0, 10) + '...')
       return NextResponse.json({ 
         success: false, 
         error: 'Invalid API key format. Please check your Gemini API key.' 
       }, { status: 400 })
     }
+
+    console.log('API key validated successfully')
 
     // 프롬프트 생성
     const prompt = createRecordPrompt({
