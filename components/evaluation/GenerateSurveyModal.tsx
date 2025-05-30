@@ -254,10 +254,10 @@ export function GenerateSurveyModal({
                         <p className="text-sm text-gray-600 mt-1">
                           {plan.unit} {plan.lesson && `• ${plan.lesson}`}
                         </p>
-                        {plan.learning_objectives && plan.learning_objectives.length > 0 && (
+                        {plan.learning_objectives && plan.learning_objectives.length > 0 && plan.learning_objectives[0] && (
                           <p className="text-xs text-gray-500 mt-2">
-                            {plan.learning_objectives[0].substring(0, 100)}
-                            {plan.learning_objectives[0].length > 100 ? '...' : ''}
+                            {(plan.learning_objectives[0] || '').substring(0, 100)}
+                            {(plan.learning_objectives[0] || '').length > 100 ? '...' : ''}
                           </p>
                         )}
                       </div>

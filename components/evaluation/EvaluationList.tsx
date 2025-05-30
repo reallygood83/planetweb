@@ -73,8 +73,10 @@ export function EvaluationList({ evaluations, onDelete, onEdit, onGenerateSurvey
                   <div className="space-y-1">
                     {evaluation.achievement_standards.slice(0, 2).map((standard, index) => (
                       <div key={index} className="text-xs text-gray-600 bg-blue-50 px-2 py-1 rounded">
-                        <span className="font-mono text-blue-700">{standard.code}</span>
-                        <span className="ml-2">{standard.content.slice(0, 30)}...</span>
+                        {standard?.code && <span className="font-mono text-blue-700">{standard.code}</span>}
+                        <span className="ml-2">
+                          {(standard?.content || '').slice(0, 30)}...
+                        </span>
                       </div>
                     ))}
                     {evaluation.achievement_standards.length > 2 && (
