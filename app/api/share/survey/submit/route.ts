@@ -42,27 +42,14 @@ export async function POST(request: Request) {
       }, { status: 403 });
     }
 
-    // 학급에서 해당 학생 찾기
-    const { data: student, error: studentError } = await supabase
-      .from('students')
-      .select('id, name, number')
-      .eq('class_id', access.class_id)
-      .eq('name', studentName)
-      .eq('number', studentNumber)
-      .single();
-
-    if (studentError || !student) {
-      return NextResponse.json({ 
-        error: `해당 학급에 ${studentNumber}번 ${studentName} 학생을 찾을 수 없습니다.` 
-      }, { status: 404 });
-    }
-
-    // 중복 응답 확인
+    // 중복 응답 확인 (번호와 이름으로)
     const { data: existingResponse } = await supabase
-      .from('student_survey_submissions')
+      .from('anonymous_survey_responses')
       .select('id')
       .eq('survey_id', access.survey_id)
-      .eq('student_id', student.id)
+      .eq('access_code', accessCode)
+      .eq('student_number', studentNumber)
+      .eq('student_name', studentName)
       .single();
 
     if (existingResponse) {
@@ -71,15 +58,15 @@ export async function POST(request: Request) {
       }, { status: 409 });
     }
 
-    // 응답 저장
+    // 익명 응답 저장
     const { data: newResponse, error: insertError } = await supabase
-      .from('student_survey_submissions')
+      .from('anonymous_survey_responses')
       .insert({
         survey_id: access.survey_id,
         access_code: accessCode,
-        student_id: student.id,
         student_name: studentName,
         student_number: studentNumber,
+        class_name: access.class_id ? `학급 ${access.class_id}` : null,
         responses: responses
       })
       .select()
@@ -88,15 +75,6 @@ export async function POST(request: Request) {
     if (insertError) {
       throw insertError;
     }
-
-    // 기존 survey_responses 테이블에도 저장 (호환성 유지)
-    await supabase
-      .from('survey_responses')
-      .insert({
-        survey_id: access.survey_id,
-        student_id: student.id,
-        responses: responses
-      });
 
     return NextResponse.json({
       message: '설문이 성공적으로 제출되었습니다.',
@@ -140,22 +118,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: '설문을 찾을 수 없습니다.' }, { status: 404 });
     }
 
-    // 학생 응답 조회 (학생 정보 포함)
+    // 익명 응답 조회
     const { data: responses, error: responsesError } = await supabase
-      .from('student_survey_submissions')
-      .select(`
-        *,
-        student:students (
-          id,
-          name,
-          number,
-          class:classes (
-            name,
-            grade,
-            class_number
-          )
-        )
-      `)
+      .from('anonymous_survey_responses')
+      .select('*')
       .eq('survey_id', surveyId)
       .order('student_number', { ascending: true });
 
@@ -167,7 +133,7 @@ export async function GET(request: Request) {
     const stats = {
       totalResponses: responses?.length || 0,
       responsesByClass: responses?.reduce((acc: any, resp: any) => {
-        const className = resp.access_code_info?.class?.name || '미지정';
+        const className = resp.class_name || '미지정';
         acc[className] = (acc[className] || 0) + 1;
         return acc;
       }, {}),
