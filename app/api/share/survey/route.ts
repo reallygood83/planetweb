@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { surveyId, classId, expiresInDays = 7, maxResponses = null } = body;
+    const { surveyId, classId } = body;
 
     if (!surveyId) {
       return NextResponse.json({ error: '설문 ID가 필요합니다.' }, { status: 400 });
