@@ -1,15 +1,15 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
-// 익명 설문 응답 제출
+// 학생 설문 응답 제출 (학급 학생과 매칭)
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { accessCode, studentName, responses } = body;
+    const { accessCode, studentName, studentNumber, responses } = body;
 
-    if (!accessCode || !studentName || !responses) {
+    if (!accessCode || !studentName || !studentNumber || !responses) {
       return NextResponse.json({ 
-        error: '필수 정보가 누락되었습니다.' 
+        error: '필수 정보가 누락되었습니다. (이름, 번호, 응답)' 
       }, { status: 400 });
     }
 
@@ -42,13 +42,27 @@ export async function POST(request: Request) {
       }, { status: 403 });
     }
 
-    // 중복 응답 확인 (같은 이름으로 이미 제출했는지)
+    // 학급에서 해당 학생 찾기
+    const { data: student, error: studentError } = await supabase
+      .from('students')
+      .select('id, name, number')
+      .eq('class_id', access.class_id)
+      .eq('name', studentName)
+      .eq('number', studentNumber)
+      .single();
+
+    if (studentError || !student) {
+      return NextResponse.json({ 
+        error: `해당 학급에 ${studentNumber}번 ${studentName} 학생을 찾을 수 없습니다.` 
+      }, { status: 404 });
+    }
+
+    // 중복 응답 확인
     const { data: existingResponse } = await supabase
-      .from('anonymous_survey_responses')
+      .from('student_survey_submissions')
       .select('id')
       .eq('survey_id', access.survey_id)
-      .eq('access_code', accessCode)
-      .eq('student_name', studentName)
+      .eq('student_id', student.id)
       .single();
 
     if (existingResponse) {
@@ -59,11 +73,13 @@ export async function POST(request: Request) {
 
     // 응답 저장
     const { data: newResponse, error: insertError } = await supabase
-      .from('anonymous_survey_responses')
+      .from('student_survey_submissions')
       .insert({
         survey_id: access.survey_id,
         access_code: accessCode,
+        student_id: student.id,
         student_name: studentName,
+        student_number: studentNumber,
         responses: responses
       })
       .select()
@@ -73,26 +89,14 @@ export async function POST(request: Request) {
       throw insertError;
     }
 
-    // 학생의 실제 계정이 있는지 확인하고 연결 (선택적)
-    if (access.class_id) {
-      const { data: student } = await supabase
-        .from('students')
-        .select('id')
-        .eq('class_id', access.class_id)
-        .eq('name', studentName)
-        .single();
-
-      if (student) {
-        // 기존 survey_responses 테이블에도 저장 (교사가 기존 방식으로도 볼 수 있도록)
-        await supabase
-          .from('survey_responses')
-          .insert({
-            survey_id: access.survey_id,
-            student_id: student.id,
-            responses: responses
-          });
-      }
-    }
+    // 기존 survey_responses 테이블에도 저장 (호환성 유지)
+    await supabase
+      .from('survey_responses')
+      .insert({
+        survey_id: access.survey_id,
+        student_id: student.id,
+        responses: responses
+      });
 
     return NextResponse.json({
       message: '설문이 성공적으로 제출되었습니다.',
@@ -107,7 +111,7 @@ export async function POST(request: Request) {
   }
 }
 
-// 교사가 익명 응답 조회
+// 교사가 학생 응답 조회
 export async function GET(request: Request) {
   try {
     const supabase = await createClient();
@@ -136,12 +140,15 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: '설문을 찾을 수 없습니다.' }, { status: 404 });
     }
 
-    // 익명 응답 조회
+    // 학생 응답 조회 (학생 정보 포함)
     const { data: responses, error: responsesError } = await supabase
-      .from('anonymous_survey_responses')
+      .from('student_survey_submissions')
       .select(`
         *,
-        access_code_info:survey_access_codes!access_code (
+        student:students (
+          id,
+          name,
+          number,
           class:classes (
             name,
             grade,
@@ -150,7 +157,7 @@ export async function GET(request: Request) {
         )
       `)
       .eq('survey_id', surveyId)
-      .order('submitted_at', { ascending: false });
+      .order('student_number', { ascending: true });
 
     if (responsesError) {
       throw responsesError;

@@ -35,7 +35,8 @@ export default function AnonymousSurveyPage() {
   const [surveyInfo, setSurveyInfo] = useState<SurveyInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [studentName, setStudentName] = useState('');
+  const [studentName, setStudentName] = useState('')
+  const [studentNumber, setStudentNumber] = useState<number | ''>('');
   const [responses, setResponses] = useState<Record<string, any>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -75,8 +76,8 @@ export default function AnonymousSurveyPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!studentName.trim()) {
-      alert('이름을 입력해주세요.');
+    if (!studentName.trim() || !studentNumber) {
+      alert('이름과 번호를 모두 입력해주세요.');
       return;
     }
 
@@ -99,6 +100,7 @@ export default function AnonymousSurveyPage() {
         body: JSON.stringify({
           accessCode,
           studentName,
+          studentNumber,
           responses
         })
       });
@@ -161,7 +163,7 @@ export default function AnonymousSurveyPage() {
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold mb-2">설문이 제출되었습니다!</h2>
             <p className="text-gray-600 mb-6">
-              {studentName}님의 응답이 성공적으로 저장되었습니다.
+              {studentNumber}번 {studentName}님의 응답이 성공적으로 저장되었습니다.
             </p>
             <Button onClick={() => router.push('/')}>
               홈으로 돌아가기
@@ -197,17 +199,32 @@ export default function AnonymousSurveyPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* 학생 이름 입력 */}
-              <div>
-                <Label htmlFor="name">이름 *</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  value={studentName}
-                  onChange={(e) => setStudentName(e.target.value)}
-                  placeholder="실명을 입력해주세요"
-                  required
-                />
+              {/* 학생 정보 입력 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="number">번호 *</Label>
+                  <Input
+                    id="number"
+                    type="number"
+                    value={studentNumber}
+                    onChange={(e) => setStudentNumber(e.target.value ? Number(e.target.value) : '')}
+                    placeholder="학번"
+                    min={1}
+                    max={50}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="name">이름 *</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={studentName}
+                    onChange={(e) => setStudentName(e.target.value)}
+                    placeholder="실명을 입력해주세요"
+                    required
+                  />
+                </div>
               </div>
 
               <div className="border-t pt-6">

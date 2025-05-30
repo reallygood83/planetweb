@@ -25,14 +25,17 @@ CREATE TABLE IF NOT EXISTS survey_access_codes (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 간단한 학생 응답 추적 (인증 없이)
-CREATE TABLE IF NOT EXISTS anonymous_survey_responses (
+-- 학생 응답 추적 (학급 학생과 매칭)
+CREATE TABLE IF NOT EXISTS student_survey_submissions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   survey_id UUID REFERENCES surveys(id) ON DELETE CASCADE,
   access_code VARCHAR(6) REFERENCES survey_access_codes(access_code),
-  student_name TEXT NOT NULL,
+  student_id UUID REFERENCES students(id) ON DELETE CASCADE,
+  student_name TEXT NOT NULL, -- 이름 확인용
+  student_number INTEGER NOT NULL, -- 번호 확인용
   responses JSONB NOT NULL,
-  submitted_at TIMESTAMPTZ DEFAULT NOW()
+  submitted_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(survey_id, student_id) -- 한 학생은 한 설문에 한 번만 응답
 );
 
 -- 인덱스 추가
@@ -44,7 +47,7 @@ CREATE INDEX idx_survey_access_codes_expires ON survey_access_codes(expires_at);
 -- RLS 정책 (간단하게)
 ALTER TABLE evaluation_shares ENABLE ROW LEVEL SECURITY;
 ALTER TABLE survey_access_codes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE anonymous_survey_responses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE student_survey_submissions ENABLE ROW LEVEL SECURITY;
 
 -- 평가계획 공유 정책
 CREATE POLICY "사용자는 자신의 평가계획만 공유 가능" ON evaluation_shares
@@ -71,22 +74,26 @@ CREATE POLICY "접근 코드로 누구나 조회 가능" ON survey_access_codes
 CREATE POLICY "교사만 삭제 가능" ON survey_access_codes
   FOR DELETE USING (teacher_id = auth.uid());
 
--- 익명 설문 응답 정책
-CREATE POLICY "유효한 접근 코드로 응답 제출" ON anonymous_survey_responses
+-- 학생 설문 응답 정책
+CREATE POLICY "유효한 접근 코드와 학급 학생만 응답 제출" ON student_survey_submissions
   FOR INSERT WITH CHECK (
     EXISTS (
-      SELECT 1 FROM survey_access_codes 
-      WHERE access_code = anonymous_survey_responses.access_code
-      AND (expires_at IS NULL OR expires_at > NOW())
+      SELECT 1 FROM survey_access_codes sac
+      JOIN students s ON s.class_id = sac.class_id
+      WHERE sac.access_code = student_survey_submissions.access_code
+      AND s.id = student_survey_submissions.student_id
+      AND s.name = student_survey_submissions.student_name
+      AND s.number = student_survey_submissions.student_number
+      AND (sac.expires_at IS NULL OR sac.expires_at > NOW())
     )
   );
 
-CREATE POLICY "교사는 자신의 설문 응답 조회 가능" ON anonymous_survey_responses
+CREATE POLICY "교사는 자신의 설문 응답 조회 가능" ON student_survey_submissions
   FOR SELECT USING (
     EXISTS (
       SELECT 1 FROM surveys s
       JOIN survey_access_codes sac ON sac.survey_id = s.id
-      WHERE s.id = anonymous_survey_responses.survey_id
+      WHERE s.id = student_survey_submissions.survey_id
       AND s.teacher_id = auth.uid()
     )
   );
@@ -141,6 +148,22 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER update_response_count
-  AFTER INSERT ON anonymous_survey_responses
+  AFTER INSERT ON student_survey_submissions
   FOR EACH ROW
   EXECUTE FUNCTION increment_response_count();
+
+-- 학생 설문 응답 조회 뷰 (교사용)
+CREATE OR REPLACE VIEW student_survey_responses_view AS
+SELECT 
+  ssr.*,
+  s.name as student_name_verified,
+  s.number as student_number_verified,
+  c.name as class_name,
+  c.grade,
+  c.class_number,
+  sv.title as survey_title,
+  sv.teacher_id
+FROM student_survey_submissions ssr
+JOIN students s ON s.id = ssr.student_id
+JOIN classes c ON c.id = s.class_id
+JOIN surveys sv ON sv.id = ssr.survey_id;

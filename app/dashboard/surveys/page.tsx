@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/auth-context'
 import { GenerateSurveyModal } from '@/components/evaluation/GenerateSurveyModal'
+import { ShareSurveyModal } from '@/components/surveys/ShareSurveyModal'
 import { 
   FileText, 
   Users, 
@@ -59,6 +60,8 @@ export default function SurveysPage() {
   const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null)
   const [hasLocalSurveys, setHasLocalSurveys] = useState(false)
   const [showGenerateModal, setShowGenerateModal] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [surveyToShare, setSurveyToShare] = useState<Survey | null>(null)
 
   useEffect(() => {
     if (user) {
@@ -395,6 +398,18 @@ export default function SurveysPage() {
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={() => {
+                      setSurveyToShare(survey)
+                      setShowShareModal(true)
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Share2 className="h-4 w-4" />
+                    공유
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => handleDeleteSurvey(survey.id)}
                     className="flex items-center gap-2 text-red-600 hover:text-red-700"
                   >
@@ -472,6 +487,16 @@ export default function SurveysPage() {
         open={showGenerateModal}
         onOpenChange={setShowGenerateModal}
         onSuccess={handleSurveyGenerated}
+      />
+
+      {/* Share Survey Modal */}
+      <ShareSurveyModal
+        isOpen={showShareModal}
+        onClose={() => {
+          setShowShareModal(false)
+          setSurveyToShare(null)
+        }}
+        survey={surveyToShare}
       />
     </div>
   )
