@@ -23,92 +23,63 @@ export async function POST(request: Request) {
       .from('surveys')
       .select('*')
       .eq('id', surveyId)
-      .eq('teacher_id', user.id)
+      .eq('user_id', user.id)
       .single();
 
     if (surveyError || !survey) {
-      return NextResponse.json({ error: '설문을 찾을 수 없습니다.' }, { status: 404 });
+      console.error('Survey lookup error:', surveyError);
+      console.log('Survey ID:', surveyId);
+      console.log('User ID:', user.id);
+      return NextResponse.json({ 
+        error: '설문을 찾을 수 없습니다.',
+        details: surveyError?.message || 'Survey not found',
+        surveyId,
+        userId: user.id
+      }, { status: 404 });
     }
 
-    // 기존 접근 코드 확인
-    const { data: existingCode } = await supabase
-      .from('survey_access_codes')
-      .select('*')
-      .eq('survey_id', surveyId)
-      .eq('teacher_id', user.id)
-      .single();
-
-    if (existingCode) {
-      // 기존 코드 업데이트
-      const { data: updated, error: updateError } = await supabase
-        .from('survey_access_codes')
-        .update({
-          expires_at: new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString(),
-          max_responses: maxResponses,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existingCode.id)
-        .select()
+    // 학급 정보 가져오기 (학급 코드 사용)
+    let classData = null;
+    if (classId) {
+      const { data: cls, error: classError } = await supabase
+        .from('classes')
+        .select('*')
+        .eq('id', classId)
+        .eq('user_id', user.id)
         .single();
-
-      if (updateError) {
-        throw updateError;
+      
+      if (classError) {
+        console.error('Class lookup error:', classError);
+      } else {
+        classData = cls;
       }
-
-      return NextResponse.json({
-        accessCode: existingCode.access_code,
-        surveyUrl: `${process.env.NEXT_PUBLIC_APP_URL}/survey/${existingCode.access_code}`,
-        ...updated
-      });
     }
 
-    // 새 접근 코드 생성 (안전한 방식)
+    // 학급 코드가 있으면 그것을 사용, 없으면 간단한 설문 공유 코드 생성
     let accessCode = '';
-    let attempts = 0;
-    const maxAttempts = 10;
+    let surveyUrl = '';
     
-    while (attempts < maxAttempts && !accessCode) {
-      attempts++;
-      // 6자리 랜덤 코드 생성
-      const randomCode = 'S' + Math.random().toString(36).substring(2, 7).toUpperCase();
-      
-      // 중복 체크
-      const { data: existing } = await supabase
-        .from('survey_access_codes')
-        .select('id')
-        .eq('access_code', randomCode)
-        .single();
-      
-      if (!existing) {
-        accessCode = randomCode;
-      }
-    }
-    
-    if (!accessCode) {
-      return NextResponse.json({ error: '접근 코드 생성에 실패했습니다.' }, { status: 500 });
-    }
-
-    const { data: newAccess, error: insertError } = await supabase
-      .from('survey_access_codes')
-      .insert({
-        survey_id: surveyId,
-        access_code: accessCode,
-        class_id: classId,
-        teacher_id: user.id,
-        expires_at: new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString(),
-        max_responses: maxResponses
-      })
-      .select()
-      .single();
-
-    if (insertError) {
-      throw insertError;
+    if (classData && classData.school_code) {
+      // 학급 코드를 사용한 URL
+      accessCode = classData.school_code;
+      surveyUrl = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/student/survey/${surveyId}?code=${accessCode}`;
+    } else {
+      // 간단한 공유 코드 생성 (6자리)
+      accessCode = 'S' + Math.random().toString(36).substring(2, 7).toUpperCase();
+      surveyUrl = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/student/survey/${surveyId}?share=${accessCode}`;
     }
 
     return NextResponse.json({
-      accessCode: newAccess.access_code,
-      surveyUrl: `${process.env.NEXT_PUBLIC_APP_URL}/survey/${newAccess.access_code}`,
-      ...newAccess
+      accessCode,
+      surveyUrl,
+      classInfo: classData ? {
+        name: classData.class_name,
+        code: classData.school_code
+      } : null,
+      surveyInfo: {
+        id: survey.id,
+        title: survey.title
+      }
     });
 
   } catch (error) {
@@ -117,62 +88,56 @@ export async function POST(request: Request) {
   }
 }
 
-// 설문 정보 조회 (학생용)
+// 설문 정보 조회 (학생용) - 간단한 버전
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const accessCode = searchParams.get('code');
+    const surveyId = searchParams.get('surveyId');
+    const code = searchParams.get('code');
 
-    if (!accessCode) {
-      return NextResponse.json({ error: '접근 코드가 필요합니다.' }, { status: 400 });
+    if (!surveyId) {
+      return NextResponse.json({ error: '설문 ID가 필요합니다.' }, { status: 400 });
     }
 
     const supabase = await createClient();
 
-    // 접근 코드 정보 조회
-    const { data: access, error: accessError } = await supabase
-      .from('survey_access_codes')
+    // 설문 정보 조회
+    const { data: survey, error: surveyError } = await supabase
+      .from('surveys')
       .select(`
         *,
-        survey:surveys (
-          *,
-          teacher:profiles!surveys_teacher_id_fkey (
-            name
-          )
-        ),
-        class:classes (
-          name,
-          grade,
-          class_number
+        user:profiles!surveys_user_id_fkey (
+          name
         )
       `)
-      .eq('access_code', accessCode)
+      .eq('id', surveyId)
+      .eq('is_active', true)
       .single();
 
-    if (accessError || !access) {
-      return NextResponse.json({ error: '유효하지 않은 접근 코드입니다.' }, { status: 404 });
+    if (surveyError || !survey) {
+      return NextResponse.json({ error: '설문을 찾을 수 없습니다.' }, { status: 404 });
     }
 
-    // 만료 확인
-    if (access.expires_at && new Date(access.expires_at) < new Date()) {
-      return NextResponse.json({ error: '만료된 접근 코드입니다.' }, { status: 410 });
-    }
-
-    // 응답 제한 확인
-    if (access.max_responses && access.response_count >= access.max_responses) {
-      return NextResponse.json({ error: '최대 응답 수에 도달했습니다.' }, { status: 403 });
+    // 학급 코드가 있으면 학급 정보도 조회
+    let classData = null;
+    if (code) {
+      const { data: cls } = await supabase
+        .from('classes')
+        .select('*')
+        .eq('school_code', code)
+        .single();
+      
+      classData = cls;
     }
 
     return NextResponse.json({
       survey: {
-        id: access.survey.id,
-        title: access.survey.title,
-        description: access.survey.description,
-        questions: access.survey.questions,
-        teacherName: access.survey.teacher?.name || '선생님'
+        id: survey.id,
+        title: survey.title,
+        questions: survey.questions,
+        teacherName: survey.user?.name || '선생님'
       },
-      class: access.class,
-      remainingResponses: access.max_responses ? access.max_responses - access.response_count : null
+      class: classData
     });
 
   } catch (error) {
