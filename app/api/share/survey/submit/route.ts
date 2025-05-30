@@ -89,7 +89,7 @@ export async function POST(request: Request) {
   }
 }
 
-// 교사가 학생 응답 조회
+// 교사가 익명 응답 조회
 export async function GET(request: Request) {
   try {
     const supabase = await createClient();
@@ -106,16 +106,15 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: '설문 ID가 필요합니다.' }, { status: 400 });
     }
 
-    // 설문 소유권 확인
-    const { data: survey, error: surveyError } = await supabase
-      .from('surveys')
+    // 설문 접근 권한 확인 (survey_access_codes를 통해)
+    const { data: accessCodes, error: accessError } = await supabase
+      .from('survey_access_codes')
       .select('*')
-      .eq('id', surveyId)
-      .eq('teacher_id', user.id)
-      .single();
+      .eq('survey_id', surveyId)
+      .eq('teacher_id', user.id);
 
-    if (surveyError || !survey) {
-      return NextResponse.json({ error: '설문을 찾을 수 없습니다.' }, { status: 404 });
+    if (accessError || !accessCodes || accessCodes.length === 0) {
+      return NextResponse.json({ error: '설문에 접근할 권한이 없습니다.' }, { status: 404 });
     }
 
     // 익명 응답 조회
