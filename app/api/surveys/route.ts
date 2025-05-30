@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       hasEvaluationPlan: !!body.evaluation_plan
     })
     
-    const { title, description, evaluation_plan_id, evaluation_plan, questions, is_active = true, survey_type = 'academic', behavior_criteria } = body
+    const { title, evaluation_plan_id, evaluation_plan, questions, is_active = true, survey_type = 'academic', behavior_criteria } = body
 
     // 필수 필드 검증
     if (!title || !questions) {
@@ -158,7 +158,6 @@ export async function POST(request: NextRequest) {
     const surveyData: any = {
       user_id: user.id,
       title,
-      description: description || null,
       evaluation_plan_id: finalEvaluationPlanId || null,
       questions,
       is_active
