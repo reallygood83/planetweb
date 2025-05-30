@@ -588,7 +588,7 @@ export default function GenerateRecordPage() {
                                   <Badge variant="secondary">{plan.grade}</Badge>
                                   <Badge variant="outline">{plan.semester}</Badge>
                                 </div>
-                                {plan.learning_objectives && plan.learning_objectives.length > 0 && (
+                                {plan.learning_objectives && Array.isArray(plan.learning_objectives) && plan.learning_objectives.length > 0 && (
                                   <p className="text-sm text-gray-600 mt-2">
                                     목표: {plan.learning_objectives.join(', ')}
                                   </p>

@@ -63,12 +63,14 @@ export function GenerateSurveyModal({
       const data = await response.json()
       
       if (data.success) {
-        setAvailablePlans(data.data)
+        setAvailablePlans(Array.isArray(data.data) ? data.data : [])
       } else {
         setError('평가 계획을 불러올 수 없습니다.')
+        setAvailablePlans([])
       }
     } catch {
       setError('평가 계획을 불러오는 중 오류가 발생했습니다.')
+      setAvailablePlans([])
     } finally {
       setPlansLoading(false)
     }
@@ -254,7 +256,7 @@ export function GenerateSurveyModal({
                         <p className="text-sm text-gray-600 mt-1">
                           {plan.unit} {plan.lesson && `• ${plan.lesson}`}
                         </p>
-                        {plan.learning_objectives && plan.learning_objectives.length > 0 && plan.learning_objectives[0] && (
+                        {plan.learning_objectives && Array.isArray(plan.learning_objectives) && plan.learning_objectives.length > 0 && plan.learning_objectives[0] && (
                           <p className="text-xs text-gray-500 mt-2">
                             {(plan.learning_objectives[0] || '').substring(0, 100)}
                             {(plan.learning_objectives[0] || '').length > 100 ? '...' : ''}
@@ -335,11 +337,11 @@ export function GenerateSurveyModal({
               {/* 객관식 문항 */}
               <div className="space-y-4">
                 <h4 className="font-medium text-blue-700">객관식 문항</h4>
-                {generatedSurvey.questions.multipleChoice.map((q, index) => (
+                {(generatedSurvey.questions?.multipleChoice || []).map((q, index) => (
                   <div key={index} className="bg-gray-50 p-4 rounded-lg">
                     <p className="font-medium mb-2">{index + 1}. {q.question}</p>
                     <div className="grid grid-cols-2 gap-2">
-                      {q.options.map((option, optIndex) => (
+                      {(q.options || []).map((option, optIndex) => (
                         <div key={optIndex} className="flex items-center gap-2">
                           <span className="w-6 h-6 border rounded-full flex items-center justify-center text-xs">
                             {optIndex + 1}
@@ -358,10 +360,10 @@ export function GenerateSurveyModal({
               {/* 주관식 문항 */}
               <div className="space-y-4">
                 <h4 className="font-medium text-green-700">주관식 문항</h4>
-                {generatedSurvey.questions.shortAnswer.map((q, index) => (
+                {(generatedSurvey.questions?.shortAnswer || []).map((q, index) => (
                   <div key={index} className="bg-gray-50 p-4 rounded-lg">
                     <p className="font-medium mb-2">
-                      {generatedSurvey.questions.multipleChoice.length + index + 1}. {q.question}
+                      {(generatedSurvey.questions?.multipleChoice?.length || 0) + index + 1}. {q.question}
                     </p>
                     <div className="border border-gray-300 rounded p-2 min-h-[60px] bg-white">
                       <span className="text-gray-400 text-sm">학생이 여기에 답변을 작성합니다...</span>
