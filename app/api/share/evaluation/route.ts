@@ -62,12 +62,30 @@ export async function POST(request: Request) {
       });
     }
 
-    // 새 공유 링크 생성
-    const { data: shareCode, error: codeError } = await supabase
-      .rpc('generate_unique_code', { prefix: 'E' });
-
-    if (codeError) {
-      throw codeError;
+    // 새 공유 링크 생성 (안전한 방식)
+    let shareCode = '';
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    while (attempts < maxAttempts && !shareCode) {
+      attempts++;
+      // 6자리 랜덤 코드 생성
+      const randomCode = 'E' + Math.random().toString(36).substring(2, 7).toUpperCase();
+      
+      // 중복 체크
+      const { data: existing } = await supabase
+        .from('evaluation_shares')
+        .select('id')
+        .eq('share_code', randomCode)
+        .single();
+      
+      if (!existing) {
+        shareCode = randomCode;
+      }
+    }
+    
+    if (!shareCode) {
+      return NextResponse.json({ error: '공유 코드 생성에 실패했습니다.' }, { status: 500 });
     }
 
     const { data: newShare, error: insertError } = await supabase
@@ -134,8 +152,19 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: '만료된 공유 링크입니다.' }, { status: 410 });
     }
 
-    // 조회수 증가
-    await supabase.rpc('increment_share_view_count', { p_share_code: shareCode });
+    // 조회수 증가 (안전한 방식)
+    try {
+      await supabase
+        .from('evaluation_shares')
+        .update({ 
+          view_count: share.view_count + 1,
+          updated_at: new Date().toISOString()
+        })
+        .eq('share_code', shareCode);
+    } catch (updateError) {
+      // 조회수 업데이트 실패는 무시 (핵심 기능에 영향 없음)
+      console.warn('조회수 업데이트 실패:', updateError);
+    }
 
     return NextResponse.json({
       evaluation: share.evaluation_plan,

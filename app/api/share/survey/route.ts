@@ -62,12 +62,30 @@ export async function POST(request: Request) {
       });
     }
 
-    // 새 접근 코드 생성
-    const { data: accessCode, error: codeError } = await supabase
-      .rpc('generate_unique_code', { prefix: 'S' });
-
-    if (codeError) {
-      throw codeError;
+    // 새 접근 코드 생성 (안전한 방식)
+    let accessCode = '';
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    while (attempts < maxAttempts && !accessCode) {
+      attempts++;
+      // 6자리 랜덤 코드 생성
+      const randomCode = 'S' + Math.random().toString(36).substring(2, 7).toUpperCase();
+      
+      // 중복 체크
+      const { data: existing } = await supabase
+        .from('survey_access_codes')
+        .select('id')
+        .eq('access_code', randomCode)
+        .single();
+      
+      if (!existing) {
+        accessCode = randomCode;
+      }
+    }
+    
+    if (!accessCode) {
+      return NextResponse.json({ error: '접근 코드 생성에 실패했습니다.' }, { status: 500 });
     }
 
     const { data: newAccess, error: insertError } = await supabase
