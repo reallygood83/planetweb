@@ -22,14 +22,15 @@ import {
 interface SchoolCode {
   id: string
   code: string
-  group_name: string
+  name: string
   description: string
   school_name: string
-  target_grade?: string
-  primary_subject?: string
   creator_id: string
-  creator_email: string
-  members: string[]
+  settings?: {
+    target_grade?: string
+    primary_subject?: string
+  }
+  role?: 'creator' | 'admin' | 'member'
   created_at: string
   updated_at: string
 }
@@ -57,7 +58,7 @@ export default function SchoolCodePage() {
   const fetchSchoolCodes = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/school-codes')
+      const response = await fetch('/api/school-codes-new')
       const data = await response.json()
 
       if (data.success) {
@@ -79,7 +80,7 @@ export default function SchoolCodePage() {
     primary_subject?: string
   }) => {
     try {
-      const response = await fetch('/api/school-codes', {
+      const response = await fetch('/api/school-codes-new', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -104,14 +105,14 @@ export default function SchoolCodePage() {
 
   const handleJoinCode = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!joinCode || joinCode.length !== 6) {
-      alert('6자리 학교 코드를 입력해주세요.')
+    if (!joinCode || joinCode.length < 4) {
+      alert('4자리 이상의 학교 코드를 입력해주세요.')
       return
     }
 
     setJoining(true)
     try {
-      const response = await fetch('/api/school-codes/join', {
+      const response = await fetch('/api/school-codes-new/join', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -200,7 +201,7 @@ export default function SchoolCodePage() {
           <CardHeader>
             <CardTitle>학교 코드로 참여</CardTitle>
             <CardDescription>
-              동료 교사로부터 받은 6자리 코드를 입력하세요.
+              동료 교사로부터 받은 4-10자리 코드를 입력하세요.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -211,8 +212,8 @@ export default function SchoolCodePage() {
                   id="joinCode"
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                  placeholder="예: ABC123"
-                  maxLength={6}
+                  placeholder="예: SCHOOL1, ABC123"
+                  maxLength={10}
                   className="font-mono text-lg"
                   required
                 />
@@ -256,9 +257,12 @@ export default function SchoolCodePage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      {code.group_name}
-                      {code.creator_id === user?.id && (
+                      {code.name}
+                      {(code.creator_id === user?.id || code.role === 'admin') && (
                         <Badge variant="secondary">관리자</Badge>
+                      )}
+                      {code.role === 'member' && (
+                        <Badge variant="outline">멤버</Badge>
                       )}
                     </CardTitle>
                     <CardDescription className="mt-1">
@@ -289,30 +293,26 @@ export default function SchoolCodePage() {
                     <School className="h-4 w-4" />
                     {code.school_name}
                   </div>
-                  {code.target_grade && (
-                    <div>{code.target_grade}</div>
+                  {code.settings?.target_grade && (
+                    <div>{code.settings.target_grade}</div>
                   )}
-                  {code.primary_subject && (
-                    <div>{code.primary_subject}</div>
+                  {code.settings?.primary_subject && (
+                    <div>{code.settings.primary_subject}</div>
                   )}
-                  <div className="flex items-center gap-1">
-                    <Users className="h-4 w-4" />
-                    {code.members.length}명 참여
-                  </div>
                   <div className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
                     {new Date(code.created_at).toLocaleDateString('ko-KR')}
                   </div>
                 </div>
                 
-                {code.creator_id === user?.id && (
+                {(code.creator_id === user?.id || code.role === 'admin') && (
                   <div className="mt-4 pt-4 border-t">
                     <Button
                       variant="outline"
                       size="sm"
                       className="flex items-center gap-2"
                       onClick={() => {
-                        const shareText = `[${code.group_name}] 그룹에 참여하세요!\n\n학교 코드: ${code.code}\n설명: ${code.description}`
+                        const shareText = `[${code.name}] 그룹에 참여하세요!\n\n학교 코드: ${code.code}\n설명: ${code.description}`
                         navigator.clipboard.writeText(shareText)
                         alert('초대 메시지가 복사되었습니다.')
                       }}
