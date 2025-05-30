@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { X, Copy, Users, CheckCircle, QrCode } from 'lucide-react'
+import { X, Copy, Users, CheckCircle } from 'lucide-react'
 
 interface Survey {
   id: string
@@ -66,7 +66,7 @@ export function ShareSurveyModal({ survey, classId, isOpen, onClose }: ShareSurv
       await navigator.clipboard.writeText(text)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
+    } catch {
       alert('복사에 실패했습니다.')
     }
   }

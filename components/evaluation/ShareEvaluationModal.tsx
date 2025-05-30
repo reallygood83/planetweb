@@ -60,7 +60,7 @@ export function ShareEvaluationModal({ evaluation, isOpen, onClose }: ShareEvalu
       await navigator.clipboard.writeText(text)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
+    } catch {
       alert('복사에 실패했습니다.')
     }
   }

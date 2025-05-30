@@ -43,6 +43,7 @@ export default function AnonymousSurveyPage() {
 
   useEffect(() => {
     fetchSurveyInfo();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessCode]);
 
   const fetchSurveyInfo = async () => {
