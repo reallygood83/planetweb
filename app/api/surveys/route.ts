@@ -96,12 +96,11 @@ export async function POST(request: NextRequest) {
       title: body.title,
       hasQuestions: !!body.questions,
       questionsCount: body.questions?.length,
-      survey_type: body.survey_type,
-      hasBehaviorCriteria: !!body.behavior_criteria,
       hasEvaluationPlan: !!body.evaluation_plan
     })
     
-    const { title, evaluation_plan_id, evaluation_plan, questions, is_active = true, survey_type, behavior_criteria } = body
+    const { title, evaluation_plan_id, evaluation_plan, questions, is_active = true } = body
+    // const { survey_type, behavior_criteria } = body // Temporarily disabled
 
     // 필수 필드 검증
     if (!title || !questions) {
@@ -191,10 +190,9 @@ export async function POST(request: NextRequest) {
       questions: `[${surveyData.questions?.length} questions]`
     })
 
-    // Try to insert survey with error handling for missing columns
-    let insertQuery = supabase.from('surveys').insert([surveyData])
-    
-    const { data: newSurvey, error } = await insertQuery
+    const { data: newSurvey, error } = await supabase
+      .from('surveys')
+      .insert([surveyData])
       .select(`
         *,
         evaluation_plans (
