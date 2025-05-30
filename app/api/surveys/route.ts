@@ -19,7 +19,7 @@ export async function GET() {
       return NextResponse.json({ success: true, data: [] })
     }
 
-    // 사용자의 모든 설문 조회 (평가계획 정보 포함)
+    // 사용자의 활성 설문만 조회 (평가계획 정보 포함)
     const { data: surveys, error } = await supabase
       .from('surveys')
       .select(`
@@ -33,6 +33,7 @@ export async function GET() {
         )
       `)
       .eq('user_id', user.id)
+      .eq('is_active', true)  // 삭제되지 않은 설문만 조회
       .order('created_at', { ascending: false })
 
     if (error) {

@@ -1,4 +1,4 @@
-# 생기부 AI 도우미 (Web Version)
+# Planet - 생기부 AI 도우미 (Web Version)
 
 AI를 활용한 초등학교 생활기록부 작성 도우미 웹 애플리케이션
 
@@ -29,7 +29,7 @@ AI를 활용한 초등학교 생활기록부 작성 도우미 웹 애플리케�
 
 ```bash
 git clone [your-repo-url]
-cd saenggibu-helper-web
+cd planet-web
 npm install
 ```
 
@@ -67,7 +67,7 @@ npm run dev
 ## 📁 프로젝트 구조
 
 ```
-saenggibu-helper-web/
+planet-web/
 ├── app/                    # Next.js App Router
 │   ├── api/               # API Routes
 │   ├── auth/              # 인증 페이지

@@ -253,8 +253,13 @@ export interface Database {
           user_id: string
           evaluation_plan_id: string | null
           title: string
+          description?: string
           questions: Json
+          survey_type?: string
+          behavior_criteria?: Json
           is_active: boolean | null
+          teacher_id?: string | null
+          individual_evaluation_id?: string | null
           created_at: string
           updated_at: string
         }
@@ -263,8 +268,13 @@ export interface Database {
           user_id: string
           evaluation_plan_id?: string | null
           title: string
+          description?: string
           questions?: Json
+          survey_type?: string
+          behavior_criteria?: Json
           is_active?: boolean | null
+          teacher_id?: string | null
+          individual_evaluation_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -273,8 +283,13 @@ export interface Database {
           user_id?: string
           evaluation_plan_id?: string | null
           title?: string
+          description?: string
           questions?: Json
+          survey_type?: string
+          behavior_criteria?: Json
           is_active?: boolean | null
+          teacher_id?: string | null
+          individual_evaluation_id?: string | null
           created_at?: string
           updated_at?: string
         }

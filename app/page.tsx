@@ -8,7 +8,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex-shrink-0">
-              <h1 className="text-2xl font-bold text-slate-900">아이빛</h1>
+              <h1 className="text-2xl font-bold text-slate-900">Planet</h1>
             </div>
             <div className="flex gap-4">
               <Link href="/auth/login" className="text-slate-600 hover:text-slate-900 font-medium">
@@ -215,7 +215,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="py-8 bg-slate-900 text-slate-400">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p>&copy; 2024 아이빛 - 학생 자기평가 기반 생기부 AI. All rights reserved.</p>
+          <p>&copy; 2025 박달초 김문정 | <a href="https://www.youtube.com/@%EB%B0%B0%EC%9B%80%EC%9D%98%EB%8B%AC%EC%9D%B8-p5v" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">유튜브 배움의 달인</a></p>
         </div>
       </footer>
     </div>

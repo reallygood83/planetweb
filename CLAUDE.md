@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-This is a Next.js 14 application using the App Router pattern for a Korean educational platform called "생기부 AI 도우미" (Student Record AI Helper) that helps teachers generate student evaluation records using AI.
+This is a Next.js 14 application using the App Router pattern for a Korean educational platform called "Planet" (Student Record AI Helper) that helps teachers generate student evaluation records using AI.
 
 ### Core Technology Stack
 - **Frontend**: Next.js 14, TypeScript, Tailwind CSS, Radix UI components

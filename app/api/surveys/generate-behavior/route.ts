@@ -68,7 +68,8 @@ export async function POST(request: NextRequest) {
       classActivities,
       specialEvents,
       grade,
-      semester
+      semester,
+      evaluationCriteria
     } = body
 
     console.log('Extracted values:', { selectedValues, grade, semester })
@@ -148,6 +149,14 @@ ${selectedValueDetails.map(value => `
 - 주요 학급 활동: ${classActivities || ''}
 - 특별한 사건/프로그램: ${specialEvents || ''}
 
+## 평가기준 (4단계)
+${evaluationCriteria ? `
+- **매우잘함**: ${evaluationCriteria.excellent || '(설정되지 않음)'}
+- **잘함**: ${evaluationCriteria.good || '(설정되지 않음)'}
+- **보통**: ${evaluationCriteria.average || '(설정되지 않음)'}
+- **노력요함**: ${evaluationCriteria.needsImprovement || '(설정되지 않음)'}
+` : '- 일반적인 4단계 평가기준 적용 (매우잘함, 잘함, 보통, 노력요함)'}
+
 ## 설문 생성 가이드라인
 1. **목적**: NEIS 행동특성 및 종합의견 작성을 위한 구체적 자료 수집
 2. **대상**: 초등학생 (${grade || '전학년'})
@@ -160,6 +169,8 @@ ${selectedValueDetails.map(value => `
 - 핵심 인성 요소와 직접 연결되는 상황별 질문
 - 초등학생이 이해하기 쉬운 언어 사용
 - 학생의 성장과 변화를 확인할 수 있는 성찰적 질문
+- 설정된 4단계 평가기준을 반영한 객관식 선택지 구성
+- 객관식 질문은 4단계 평가기준에 따라 응답할 수 있도록 구성
 
 ## NEIS 행동특성 작성 기준 반영
 - 객관적 근거와 구체적 행동 사례 수집
@@ -175,7 +186,7 @@ ${selectedValueDetails.map(value => `
     {
       "type": "multiple_choice",
       "question": "질문 내용",
-      "options": ["선택지1", "선택지2", "선택지3", "선택지4"],
+      "options": ["매우잘함 기준 선택지", "잘함 기준 선택지", "보통 기준 선택지", "노력요함 기준 선택지"],
       "coreValue": "해당하는 핵심 인성 요소 ID",
       "guideline": "답변 가이드 (선택사항)"
     },
@@ -192,7 +203,8 @@ ${selectedValueDetails.map(value => `
 - 모든 질문은 선택된 핵심 인성 요소와 연관되어야 함
 - 학생이 구체적인 행동 사례를 떠올릴 수 있는 상황별 질문 구성
 - 주관식 질문은 반드시 구체적인 경험과 사례를 요구
-- 객관식은 행동 빈도나 정도를 측정할 수 있도록 구성
+- 객관식은 설정된 4단계 평가기준을 활용하여 구성 (매우잘함, 잘함, 보통, 노력요함 순서)
+- 각 선택지는 해당 평가기준에 맞는 구체적인 행동 수준을 나타내야 함
 - 응답은 반드시 유효한 JSON 형식이어야 함
 `
 

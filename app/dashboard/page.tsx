@@ -115,7 +115,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">아이빛 대시보드</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Planet 대시보드</h1>
         <p className="mt-2 text-sm text-gray-600">
           학생 자기평가 기반 생기부 AI에 오신 것을 환영합니다. 시작하려면 API 키를 설정해주세요.
         </p>
@@ -206,7 +206,7 @@ export default function DashboardPage() {
         <CardHeader>
           <CardTitle>시작하기</CardTitle>
           <CardDescription>
-            아이빛으로 학생 중심 생기부를 만드는 방법
+            Planet으로 학생 중심 생기부를 만드는 방법
           </CardDescription>
         </CardHeader>
         <CardContent>

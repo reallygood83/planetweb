@@ -29,6 +29,12 @@ export default function BehaviorSurveyPage() {
   const [specialEvents, setSpecialEvents] = useState('')
   const [grade, setGrade] = useState('')
   const [semester, setSemester] = useState('')
+  const [evaluationCriteria, setEvaluationCriteria] = useState({
+    excellent: '',
+    good: '',
+    average: '',
+    needsImprovement: ''
+  })
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedSurvey, setGeneratedSurvey] = useState<any>(null)
 
@@ -60,7 +66,8 @@ export default function BehaviorSurveyPage() {
           classActivities,
           specialEvents,
           grade,
-          semester
+          semester,
+          evaluationCriteria
         })
       })
 
@@ -94,7 +101,8 @@ export default function BehaviorSurveyPage() {
           classActivities,
           specialEvents,
           grade,
-          semester
+          semester,
+          evaluationCriteria
         }
       }
 
@@ -296,6 +304,67 @@ export default function BehaviorSurveyPage() {
                   placeholder="예: 또래상담 활동, 학급회의, 리더십 활동, 멘토링 등"
                   rows={3}
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Evaluation Criteria */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-purple-600" />
+                평가기준
+              </CardTitle>
+              <CardDescription>
+                학생들을 평가할 기준을 4단계로 나누어 입력하세요.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="excellent" className="text-green-700 font-medium">매우잘함</Label>
+                  <Textarea
+                    id="excellent"
+                    value={evaluationCriteria.excellent}
+                    onChange={(e) => setEvaluationCriteria(prev => ({...prev, excellent: e.target.value}))}
+                    placeholder="학생들을 평가할 기준을 입력하세요"
+                    rows={3}
+                    className="border-green-200 focus:border-green-400"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="good" className="text-blue-700 font-medium">잘함</Label>
+                  <Textarea
+                    id="good"
+                    value={evaluationCriteria.good}
+                    onChange={(e) => setEvaluationCriteria(prev => ({...prev, good: e.target.value}))}
+                    placeholder="학생들을 평가할 기준을 입력하세요"
+                    rows={3}
+                    className="border-blue-200 focus:border-blue-400"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="average" className="text-yellow-700 font-medium">보통</Label>
+                  <Textarea
+                    id="average"
+                    value={evaluationCriteria.average}
+                    onChange={(e) => setEvaluationCriteria(prev => ({...prev, average: e.target.value}))}
+                    placeholder="학생들을 평가할 기준을 입력하세요"
+                    rows={3}
+                    className="border-yellow-200 focus:border-yellow-400"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="needsImprovement" className="text-red-700 font-medium">노력요함</Label>
+                  <Textarea
+                    id="needsImprovement"
+                    value={evaluationCriteria.needsImprovement}
+                    onChange={(e) => setEvaluationCriteria(prev => ({...prev, needsImprovement: e.target.value}))}
+                    placeholder="학생들을 평가할 기준을 입력하세요"
+                    rows={3}
+                    className="border-red-200 focus:border-red-400"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>

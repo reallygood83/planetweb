@@ -63,7 +63,7 @@ export default function LoginPage() {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">로그인</CardTitle>
           <CardDescription className="text-center">
-            아이빛에 오신 것을 환영합니다
+            Planet에 오신 것을 환영합니다
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

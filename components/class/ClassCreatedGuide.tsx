@@ -81,9 +81,9 @@ export function ClassCreatedGuide({ className, studentCount, onDismiss }: ClassC
           </div>
 
           <div className="bg-blue-50 p-4 rounded-lg">
-            <h4 className="font-medium text-blue-900 mb-2">💡 아이빛의 특별한 점</h4>
+            <h4 className="font-medium text-blue-900 mb-2">💡 Planet의 특별한 점</h4>
             <p className="text-sm text-blue-800">
-              아이빛은 학생들의 자기평가를 바탕으로 개인 맞춤형 생활기록부를 작성합니다. 
+              Planet은 학생들의 자기평가를 바탕으로 개인 맞춤형 생활기록부를 작성합니다. 
               학생들의 목소리가 담긴 진정성 있는 기록을 만들어보세요!
             </p>
           </div>

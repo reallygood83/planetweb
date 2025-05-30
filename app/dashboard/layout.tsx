@@ -80,7 +80,7 @@ export default function DashboardLayout({
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
                 <Link href="/dashboard" className="text-xl font-bold text-gray-900">
-                  아이빛
+                  Planet
                 </Link>
               </div>
               <div className="hidden md:ml-6 md:flex md:space-x-6">
