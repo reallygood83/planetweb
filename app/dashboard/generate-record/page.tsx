@@ -22,6 +22,7 @@ import {
   Download,
   RefreshCw
 } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
 
 interface Student {
   number: number
@@ -87,7 +88,7 @@ export default function GenerateRecordPage() {
   
   // Evaluation data
   const [evaluationPlans, setEvaluationPlans] = useState<any[]>([])
-  const [selectedEvaluationPlan, setSelectedEvaluationPlan] = useState<any>(null)
+  const [selectedEvaluationPlans, setSelectedEvaluationPlans] = useState<any[]>([])
   const [evaluationResults, setEvaluationResults] = useState<any[]>([])
   
   // Record generation
@@ -130,13 +131,13 @@ export default function GenerateRecordPage() {
     }
   }
 
-  const fetchEvaluationResults = useCallback(async (studentName: string, evaluationPlanId?: string) => {
+  const fetchEvaluationResults = useCallback(async (studentName: string, evaluationPlanIds?: string[]) => {
     if (!selectedClass || !studentName) return
 
     try {
       let url = `/api/evaluation-results?classId=${selectedClass.id}&studentName=${encodeURIComponent(studentName)}`
-      if (evaluationPlanId) {
-        url += `&evaluationPlanId=${evaluationPlanId}`
+      if (evaluationPlanIds && evaluationPlanIds.length > 0) {
+        url += `&evaluationPlanIds=${evaluationPlanIds.join(',')}`
       }
       
       const response = await fetch(url)
@@ -188,10 +189,10 @@ export default function GenerateRecordPage() {
   }, [selectedStudent, selectedClass, fetchStudentResponses, fetchEvaluationResults])
 
   useEffect(() => {
-    if (selectedStudent && selectedEvaluationPlan) {
-      fetchEvaluationResults(selectedStudent.name, selectedEvaluationPlan.id)
+    if (selectedStudent && selectedEvaluationPlans.length > 0) {
+      fetchEvaluationResults(selectedStudent.name, selectedEvaluationPlans.map(p => p.id))
     }
-  }, [selectedStudent, selectedEvaluationPlan, fetchEvaluationResults])
+  }, [selectedStudent, selectedEvaluationPlans, fetchEvaluationResults])
 
   const handleGenerateContent = async () => {
     if (!selectedStudent || !selectedClass || !teacherNotes.trim()) {
@@ -201,7 +202,7 @@ export default function GenerateRecordPage() {
 
     // 교과학습발달상황인 경우 평가 계획이나 과목 선택 확인
     if (recordType === '교과학습발달상황') {
-      const hasSubject = selectedEvaluationPlan?.subject || 
+      const hasSubject = selectedEvaluationPlans.length > 0 || 
                         selectedResponse?.survey.evaluation_plans?.subject || 
                         selectedSubject
       if (!hasSubject) {
@@ -218,11 +219,12 @@ export default function GenerateRecordPage() {
         className: selectedClass.name,
         recordType,
         subject: recordType === '교과학습발달상황' ? 
-          (selectedEvaluationPlan?.subject || selectedResponse?.survey.evaluation_plans?.subject || selectedSubject || '전과목') : undefined,
+          (selectedEvaluationPlans.length > 0 ? selectedEvaluationPlans.map(p => p.subject).join(', ') : 
+           selectedResponse?.survey.evaluation_plans?.subject || selectedSubject || '전과목') : undefined,
         teacherNotes,
         additionalContext,
-        // 평가 계획 정보 추가
-        evaluationPlan: selectedEvaluationPlan,
+        // 평가 계획 정보 추가 (여러 개)
+        evaluationPlans: selectedEvaluationPlans,
         // 평가 결과 정보 추가
         evaluationResults: evaluationResults,
         // 학생 자기평가 정보
@@ -307,6 +309,17 @@ export default function GenerateRecordPage() {
     }
   }
 
+  const handleEvaluationPlanToggle = (plan: any) => {
+    setSelectedEvaluationPlans(prev => {
+      const isSelected = prev.some(p => p.id === plan.id)
+      if (isSelected) {
+        return prev.filter(p => p.id !== plan.id)
+      } else {
+        return [...prev, plan]
+      }
+    })
+  }
+
   const canProceed = (step: number) => {
     switch (step) {
       case 1: return selectedClass !== null
@@ -317,7 +330,7 @@ export default function GenerateRecordPage() {
         
         // 교과학습발달상황인 경우 평가 계획이나 과목 선택 필요
         if (recordType === '교과학습발달상황') {
-          const hasSubject = selectedEvaluationPlan?.subject || 
+          const hasSubject = selectedEvaluationPlans.length > 0 || 
                             selectedResponse?.survey.evaluation_plans?.subject || 
                             selectedSubject
           return hasTeacherNotes && hasSubject
@@ -547,59 +560,71 @@ export default function GenerateRecordPage() {
               {recordType === '교과학습발달상황' && (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="evaluationPlan">평가 계획 선택</Label>
-                    <div className="space-y-2">
-                      <div 
-                        className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                          selectedEvaluationPlan === null
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                        onClick={() => setSelectedEvaluationPlan(null)}
-                      >
-                        <div className="font-medium">평가 계획 없이 생성</div>
-                        <p className="text-sm text-gray-500 mt-1">
-                          직접 과목을 입력하여 생기부를 생성합니다
-                        </p>
-                      </div>
-                      
-                      {evaluationPlans.map((plan) => (
-                        <div
-                          key={plan.id}
-                          className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                            selectedEvaluationPlan?.id === plan.id
-                              ? 'border-blue-500 bg-blue-50'
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                          onClick={() => setSelectedEvaluationPlan(plan)}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <div className="font-medium flex items-center gap-2">
-                                <Target className="h-4 w-4 text-blue-600" />
-                                {plan.subject} - {plan.unit}
+                    <Label htmlFor="evaluationPlan">평가 계획 선택 (복수 선택 가능)</Label>
+                    
+                    {evaluationPlans.length > 0 ? (
+                      <div className="space-y-2">
+                        {evaluationPlans.map((plan) => (
+                          <div
+                            key={plan.id}
+                            className={`p-3 rounded-lg border transition-colors ${
+                              selectedEvaluationPlans.some(p => p.id === plan.id)
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <Checkbox
+                                checked={selectedEvaluationPlans.some(p => p.id === plan.id)}
+                                onCheckedChange={() => handleEvaluationPlanToggle(plan)}
+                                className="mt-1"
+                              />
+                              <div className="flex-1">
+                                <div className="font-medium flex items-center gap-2">
+                                  <Target className="h-4 w-4 text-blue-600" />
+                                  {plan.subject} - {plan.unit}
+                                </div>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  <Badge variant="secondary">{plan.grade}</Badge>
+                                  <Badge variant="outline">{plan.semester}</Badge>
+                                </div>
+                                {plan.learning_objectives && plan.learning_objectives.length > 0 && (
+                                  <p className="text-sm text-gray-600 mt-2">
+                                    목표: {plan.learning_objectives.join(', ')}
+                                  </p>
+                                )}
                               </div>
-                              <div className="flex flex-wrap gap-2 mt-2">
-                                <Badge variant="secondary">{plan.grade}</Badge>
-                                <Badge variant="outline">{plan.semester}</Badge>
-                              </div>
-                              {plan.learning_objectives && plan.learning_objectives.length > 0 && (
-                                <p className="text-sm text-gray-600 mt-2">
-                                  목표: {plan.learning_objectives.join(', ')}
-                                </p>
-                              )}
                             </div>
-                            {selectedEvaluationPlan?.id === plan.id && (
-                              <Check className="h-5 w-5 text-blue-600" />
-                            )}
                           </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <Target className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                        <p className="mb-4">등록된 평가계획이 없습니다.</p>
+                        <p className="text-sm">평가계획을 먼저 등록하거나 아래에서 직접 과목을 선택하세요.</p>
+                      </div>
+                    )}
+
+                    {/* Selected Plans Summary */}
+                    {selectedEvaluationPlans.length > 0 && (
+                      <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                        <p className="text-sm font-medium text-blue-900 mb-2">
+                          선택된 평가계획 ({selectedEvaluationPlans.length}개)
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedEvaluationPlans.map((plan) => (
+                            <Badge key={plan.id} variant="default" className="text-xs">
+                              {plan.subject} - {plan.unit}
+                            </Badge>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Subject Selection (when no evaluation plan) */}
-                  {!selectedEvaluationPlan && (
+                  {selectedEvaluationPlans.length === 0 && (
                     <div className="space-y-2">
                       <Label htmlFor="subject">과목 선택</Label>
                       <select
@@ -697,17 +722,41 @@ export default function GenerateRecordPage() {
                 <div className="space-y-2 text-sm">
                   <div><span className="font-medium">학생:</span> {selectedStudent?.name}</div>
                   <div><span className="font-medium">학급:</span> {selectedClass?.name}</div>
-                  {selectedResponse ? (
-                    <>
-                      <div><span className="font-medium">설문:</span> {selectedResponse.survey.title}</div>
-                      {selectedResponse.survey.evaluation_plans && (
-                        <div>
-                          <span className="font-medium">과목:</span> {selectedResponse.survey.evaluation_plans.subject} - {selectedResponse.survey.evaluation_plans.unit}
-                        </div>
+                  <div><span className="font-medium">생기부 항목:</span> {recordType}</div>
+                  
+                  {/* 평가계획 정보 */}
+                  {recordType === '교과학습발달상황' && (
+                    <div>
+                      <span className="font-medium">평가계획:</span>{' '}
+                      {selectedEvaluationPlans.length > 0 ? (
+                        <span>
+                          {selectedEvaluationPlans.map(p => `${p.subject}-${p.unit}`).join(', ')} 
+                          ({selectedEvaluationPlans.length}개 선택)
+                        </span>
+                      ) : selectedSubject ? (
+                        <span>{selectedSubject} (직접 입력)</span>
+                      ) : selectedResponse?.survey.evaluation_plans ? (
+                        <span>{selectedResponse.survey.evaluation_plans.subject} - {selectedResponse.survey.evaluation_plans.unit} (설문 연계)</span>
+                      ) : (
+                        <span className="text-orange-600">미선택</span>
                       )}
-                    </>
+                    </div>
+                  )}
+                  
+                  {/* 자기평가 정보 */}
+                  {selectedResponse ? (
+                    <div><span className="font-medium">자기평가:</span> {selectedResponse.survey.title}</div>
                   ) : (
                     <div className="text-gray-500 italic">자기평가 미선택 (교사 관찰 기록으로만 생성)</div>
+                  )}
+                  
+                  {/* 평가결과 요약 */}
+                  {evaluationResults.length > 0 && (
+                    <div>
+                      <span className="font-medium">평가결과:</span> 총 {evaluationResults.length}개 
+                      (매우잘함 {evaluationResults.filter(r => r.result === '매우잘함').length}개, 
+                      잘함 {evaluationResults.filter(r => r.result === '잘함').length}개)
+                    </div>
                   )}
                 </div>
               </div>

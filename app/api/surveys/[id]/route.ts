@@ -4,11 +4,12 @@ import { createClient } from '@/lib/supabase/server'
 // DELETE: 설문 삭제 (soft delete)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     console.log('=== Survey deletion started ===')
-    console.log('Survey ID to delete:', params.id)
+    const { id } = await params
+    console.log('Survey ID to delete:', id)
     
     // Supabase 연결 확인
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
@@ -37,7 +38,7 @@ export async function DELETE(
     const { data: survey, error: checkError } = await supabase
       .from('surveys')
       .select('id, user_id, title')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', user.id)
       .single()
 
@@ -58,7 +59,7 @@ export async function DELETE(
         is_active: false,
         updated_at: new Date().toISOString()
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', user.id)
 
     if (deleteError) {
@@ -89,7 +90,7 @@ export async function DELETE(
 // GET: 특정 설문 조회
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Supabase 연결 확인
@@ -100,6 +101,7 @@ export async function GET(
       }, { status: 503 })
     }
 
+    const { id } = await params
     const supabase = await createClient()
     
     // 현재 사용자 확인
@@ -124,7 +126,7 @@ export async function GET(
           unit
         )
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', user.id)
       .eq('is_active', true)
       .single()
