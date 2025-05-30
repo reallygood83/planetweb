@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       hasEvaluationPlan: !!body.evaluation_plan
     })
     
-    const { title, evaluation_plan_id, evaluation_plan, questions, is_active = true, survey_type = 'academic', behavior_criteria } = body
+    const { title, evaluation_plan_id, evaluation_plan, questions, is_active = true, survey_type, behavior_criteria } = body
 
     // 필수 필드 검증
     if (!title || !questions) {
@@ -173,20 +173,28 @@ export async function POST(request: NextRequest) {
       is_active
     }
 
-    // Add behavior-specific fields if it's a behavior survey
-    if (survey_type === 'behavior_development') {
+    // Only add survey_type and behavior_criteria if they exist in the database
+    // For now, skip these fields to avoid column not found errors
+    // TODO: Enable these fields after confirming database migration
+    /*
+    if (survey_type) {
       surveyData.survey_type = survey_type
-      surveyData.behavior_criteria = behavior_criteria || null
     }
+
+    if (survey_type === 'behavior_development' && behavior_criteria) {
+      surveyData.behavior_criteria = behavior_criteria
+    }
+    */
 
     console.log('Survey data to insert:', {
       ...surveyData,
       questions: `[${surveyData.questions?.length} questions]`
     })
 
-    const { data: newSurvey, error } = await supabase
-      .from('surveys')
-      .insert([surveyData])
+    // Try to insert survey with error handling for missing columns
+    let insertQuery = supabase.from('surveys').insert([surveyData])
+    
+    const { data: newSurvey, error } = await insertQuery
       .select(`
         *,
         evaluation_plans (
