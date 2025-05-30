@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     console.log('=== 학교 코드 생성 시작 ===')
     
     const body = await request.json()
-    const { group_name, description, school_name, target_grade, primary_subject } = body
+    const { code: manualCode, group_name, description, school_name, target_grade, primary_subject } = body
 
     // 필수 필드 검증
     if (!group_name || !description || !school_name) {
@@ -82,55 +82,90 @@ export async function POST(request: NextRequest) {
 
     console.log('사용자 확인됨:', user.email)
 
-    // 간단한 코드 생성 - 10번만 시도
     let code = ''
-    let attempts = 0
-    let isUnique = false
     
-    while (attempts < 10 && !isUnique) {
-      attempts++
+    // 수동 코드가 제공되었을 경우
+    if (manualCode) {
+      // 코드 형식 검증
+      const codePattern = /^[A-Z0-9]{4,10}$/
+      if (!codePattern.test(manualCode.toUpperCase())) {
+        return NextResponse.json({ 
+          error: '코드는 4-10자의 영문 대문자와 숫자로만 구성되어야 합니다.' 
+        }, { status: 400 })
+      }
       
-      // 처음 5번은 기본 생성, 나머지는 시간 기반
-      code = attempts <= 5 
-        ? generateSimpleCode('SCHOOL')
-        : generateTimeBasedCode('SCHOOL')
+      code = manualCode.toUpperCase()
+      console.log('수동 입력 코드:', code)
       
-      console.log(`코드 생성 시도 ${attempts}: ${code}`)
-      
-      // 중복 확인
+      // 중복 검사
       const { data: existing, error: checkError } = await supabase
         .from('school_codes')
         .select('id')
         .eq('code', code)
         .maybeSingle()
       
-      if (checkError) {
-        // 테이블이 없는 경우 첫 번째 코드로 간주
-        if (checkError.code === '42P01') {
-          console.log('테이블 없음 - 첫 번째 코드로 진행')
+      if (checkError && checkError.code !== '42P01') {
+        console.log('중복 확인 오류:', checkError)
+        return NextResponse.json({ 
+          error: '코드 중복 확인 중 오류가 발생했습니다.' 
+        }, { status: 500 })
+      }
+      
+      if (existing) {
+        return NextResponse.json({ 
+          error: '이미 사용 중인 코드입니다. 다른 코드를 입력해주세요.' 
+        }, { status: 400 })
+      }
+    } else {
+      // 코드가 제공되지 않았을 경우 자동 생성 (기존 로직)
+      let attempts = 0
+      let isUnique = false
+      
+      while (attempts < 10 && !isUnique) {
+        attempts++
+        
+        // 처음 5번은 기본 생성, 나머지는 시간 기반
+        code = attempts <= 5 
+          ? generateSimpleCode('SCHOOL')
+          : generateTimeBasedCode('SCHOOL')
+        
+        console.log(`코드 생성 시도 ${attempts}: ${code}`)
+        
+        // 중복 확인
+        const { data: existing, error: checkError } = await supabase
+          .from('school_codes')
+          .select('id')
+          .eq('code', code)
+          .maybeSingle()
+        
+        if (checkError) {
+          // 테이블이 없는 경우 첫 번째 코드로 간주
+          if (checkError.code === '42P01') {
+            console.log('테이블 없음 - 첫 번째 코드로 진행')
+            isUnique = true
+            break
+          }
+          
+          console.log('중복 확인 오류:', checkError)
+          // 오류가 있어도 일단 진행
           isUnique = true
           break
         }
         
-        console.log('중복 확인 오류:', checkError)
-        // 오류가 있어도 일단 진행
-        isUnique = true
-        break
+        if (!existing) {
+          console.log('유니크한 코드 생성됨:', code)
+          isUnique = true
+        } else {
+          console.log('코드 중복됨, 재시도...')
+        }
       }
       
-      if (!existing) {
-        console.log('유니크한 코드 생성됨:', code)
-        isUnique = true
-      } else {
-        console.log('코드 중복됨, 재시도...')
+      if (!isUnique) {
+        return NextResponse.json(
+          { error: '코드 생성에 실패했습니다. 직접 코드를 입력해주세요.' }, 
+          { status: 500 }
+        )
       }
-    }
-    
-    if (!isUnique) {
-      return NextResponse.json(
-        { error: '유니크한 코드 생성에 실패했습니다. 잠시 후 다시 시도해주세요.' }, 
-        { status: 500 }
-      )
     }
 
     // 학교 코드 생성

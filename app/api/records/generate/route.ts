@@ -229,7 +229,7 @@ function createRecordPrompt({
   teacherNotes,
   includeEvaluationCriteria,
   neisRules,
-  evaluationResults = []
+  evaluationResults = [] as any[]
 }: any) {
   const evaluation = responseData.surveys.evaluation_plans
   const responses = responseData.responses

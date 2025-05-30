@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/auth-context'
 import { ClassList } from '@/components/class/ClassList'
-import { CreateClassModal } from '@/components/class/CreateClassModal'
+import { CreateClassModalV2 } from '@/components/class/CreateClassModalV2'
 import { EditClassModal } from '@/components/class/EditClassModal'
 import { ClassCreatedGuide } from '@/components/class/ClassCreatedGuide'
 import { Class } from '@/types'
@@ -46,7 +46,14 @@ export default function ClassPage() {
     }
   }
 
-  const handleCreateClass = async (classData: Omit<Class, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+  const handleCreateClass = async (classData: {
+    class_name: string
+    grade: string
+    semester: string
+    teacher?: string
+    students: { number: number; name: string }[]
+    school_code?: string
+  }) => {
     try {
       const response = await fetch('/api/classes', {
         method: 'POST',
@@ -186,7 +193,7 @@ export default function ClassPage() {
         />
       )}
 
-      <CreateClassModal
+      <CreateClassModalV2
         open={createModalOpen}
         onOpenChange={setCreateModalOpen}
         onSubmit={handleCreateClass}

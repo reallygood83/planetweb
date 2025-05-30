@@ -5,9 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/auth-context'
+import { CreateSchoolCodeModal } from '@/components/school-code/CreateSchoolCodeModal'
 import { 
   Users, 
   Copy, 
@@ -40,14 +40,8 @@ export default function SchoolCodePage() {
   const [loading, setLoading] = useState(true)
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
   
-  // 생성 폼 상태
-  const [showCreateForm, setShowCreateForm] = useState(false)
-  const [groupName, setGroupName] = useState('')
-  const [description, setDescription] = useState('')
-  const [schoolName, setSchoolName] = useState('')
-  const [targetGrade, setTargetGrade] = useState('')
-  const [primarySubject, setPrimarySubject] = useState('')
-  const [creating, setCreating] = useState(false)
+  // 생성 모달 상태
+  const [showCreateModal, setShowCreateModal] = useState(false)
   
   // 참여 폼 상태
   const [showJoinForm, setShowJoinForm] = useState(false)
@@ -76,50 +70,35 @@ export default function SchoolCodePage() {
     }
   }
 
-  const handleCreateCode = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!groupName || !description || !schoolName) {
-      alert('필수 항목을 모두 입력해주세요.')
-      return
-    }
-
-    setCreating(true)
+  const handleCreateCode = async (data: {
+    code: string
+    group_name: string
+    description: string
+    school_name: string
+    target_grade?: string
+    primary_subject?: string
+  }) => {
     try {
       const response = await fetch('/api/school-codes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          group_name: groupName,
-          description,
-          school_name: schoolName,
-          target_grade: targetGrade || null,
-          primary_subject: primarySubject || null
-        })
+        body: JSON.stringify(data)
       })
 
-      const data = await response.json()
+      const result = await response.json()
 
-      if (data.success) {
-        setSchoolCodes([data.data, ...schoolCodes])
-        setShowCreateForm(false)
-        // 폼 초기화
-        setGroupName('')
-        setDescription('')
-        setSchoolName('')
-        setTargetGrade('')
-        setPrimarySubject('')
-        
-        alert(`학교 코드가 생성되었습니다: ${data.data.code}`)
+      if (result.success) {
+        setSchoolCodes([result.data, ...schoolCodes])
+        setShowCreateModal(false)
+        alert(`학교 코드가 생성되었습니다: ${result.data.code}`)
       } else {
-        alert(data.error || '학교 코드 생성에 실패했습니다.')
+        alert(result.error || '학교 코드 생성에 실패했습니다.')
       }
     } catch (error) {
       console.error('Error creating school code:', error)
       alert('학교 코드 생성 중 오류가 발생했습니다.')
-    } finally {
-      setCreating(false)
     }
   }
 
@@ -199,7 +178,7 @@ export default function SchoolCodePage() {
             코드로 참여
           </Button>
           <Button 
-            onClick={() => setShowCreateForm(true)}
+            onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
@@ -208,89 +187,12 @@ export default function SchoolCodePage() {
         </div>
       </div>
 
-      {/* Create Form */}
-      {showCreateForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>새 협업 그룹 만들기</CardTitle>
-            <CardDescription>
-              학교 코드를 생성하여 동료 교사들과 자료를 공유하세요.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCreateCode} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="groupName">그룹 이름 *</Label>
-                  <Input
-                    id="groupName"
-                    value={groupName}
-                    onChange={(e) => setGroupName(e.target.value)}
-                    placeholder="예: 5학년 교사 모임"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="schoolName">학교명 *</Label>
-                  <Input
-                    id="schoolName"
-                    value={schoolName}
-                    onChange={(e) => setSchoolName(e.target.value)}
-                    placeholder="예: 박달초등학교"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">그룹 설명 *</Label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="그룹의 목적과 활동 내용을 설명해주세요."
-                  rows={3}
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="targetGrade">대상 학년 (선택)</Label>
-                  <Input
-                    id="targetGrade"
-                    value={targetGrade}
-                    onChange={(e) => setTargetGrade(e.target.value)}
-                    placeholder="예: 5학년"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="primarySubject">주요 과목 (선택)</Label>
-                  <Input
-                    id="primarySubject"
-                    value={primarySubject}
-                    onChange={(e) => setPrimarySubject(e.target.value)}
-                    placeholder="예: 전과목"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowCreateForm(false)}
-                >
-                  취소
-                </Button>
-                <Button type="submit" disabled={creating}>
-                  {creating ? '생성 중...' : '그룹 생성'}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+      {/* Create Modal */}
+      <CreateSchoolCodeModal
+        open={showCreateModal}
+        onOpenChange={setShowCreateModal}
+        onSubmit={handleCreateCode}
+      />
 
       {/* Join Form */}
       {showJoinForm && (
