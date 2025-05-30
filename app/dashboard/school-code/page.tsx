@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/auth-context'
 import { CreateSchoolCodeModal } from '@/components/school-code/CreateSchoolCodeModal'
 import { 
-  Users, 
   Copy, 
   Check, 
   Plus,
