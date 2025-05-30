@@ -18,18 +18,58 @@ export async function GET() {
 
     console.log('사용자 확인됨:', user.email)
 
-    // 학교 그룹 조회 
+    // 학교 그룹 조회 - 단순화된 방식
+    console.log('데이터베이스 조회 시도...')
+    
+    // 먼저 사용자의 멤버십 조회
+    const { data: memberships, error: membershipError } = await supabase
+      .from('group_memberships')
+      .select('group_id')
+      .eq('user_id', user.id)
+    
+    console.log('멤버십 조회 결과:', memberships, membershipError)
+    
+    if (membershipError) {
+      console.log('멤버십 테이블 조회 오류:', membershipError.code, membershipError.message)
+      
+      // 테이블이 없는 경우 빈 배열 반환
+      if (membershipError.code === '42P01') {
+        console.log('멤버십 테이블 없음 - 빈 배열 반환')
+        return NextResponse.json({ 
+          success: true, 
+          data: [],
+          message: '아직 생성된 학교 코드가 없습니다.'
+        })
+      }
+      
+      return NextResponse.json({ 
+        error: '데이터를 불러올 수 없습니다.',
+        details: membershipError.message 
+      }, { status: 500 })
+    }
+    
+    // 멤버십이 없는 경우
+    if (!memberships || memberships.length === 0) {
+      console.log('멤버십 없음 - 빈 배열 반환')
+      return NextResponse.json({ 
+        success: true, 
+        data: [],
+        message: '참여 중인 그룹이 없습니다.'
+      })
+    }
+    
+    // 멤버십이 있는 그룹들의 ID 추출
+    const groupIds = memberships.map(m => m.group_id)
+    console.log('그룹 ID들:', groupIds)
+    
+    // 해당 그룹들 조회
     const { data: schoolCodes, error } = await supabase
       .from('school_groups')
-      .select(`
-        *,
-        group_memberships!inner(
-          user_id,
-          role
-        )
-      `)
-      .eq('group_memberships.user_id', user.id)
+      .select('*')
+      .in('id', groupIds)
       .order('created_at', { ascending: false })
+      
+    console.log('학교 그룹 조회 결과:', schoolCodes, error)
 
     if (error) {
       console.log('학교 코드 테이블 조회 오류:', error.code, error.message)
@@ -263,14 +303,25 @@ export async function POST(request: NextRequest) {
 
     console.log('학교 코드 생성 성공:', code)
     
-    // 그룹 멤버십 추가
-    await supabase
-      .from('group_memberships')
-      .insert({
-        group_id: newSchoolGroup.id,
-        user_id: user.id,
-        role: 'admin'
-      })
+    // 그룹 멤버십 추가 시도
+    try {
+      const { error: membershipError } = await supabase
+        .from('group_memberships')
+        .insert({
+          group_id: newSchoolGroup.id,
+          user_id: user.id,
+          role: 'admin'
+        })
+      
+      if (membershipError) {
+        console.error('멤버십 추가 오류:', membershipError)
+        // 멤버십 추가 실패해도 그룹 생성은 성공으로 처리
+      } else {
+        console.log('멤버십 추가 성공')
+      }
+    } catch (membershipErr) {
+      console.error('멤버십 추가 예외:', membershipErr)
+    }
     
     return NextResponse.json({ success: true, data: newSchoolGroup }, { status: 201 })
     
