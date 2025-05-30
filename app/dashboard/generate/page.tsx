@@ -20,7 +20,12 @@ export default function GeneratePage() {
   console.log('Current state:', { subject, grade, semester, unit })
   const [learningObjectives, setLearningObjectives] = useState('')
   const [achievementStandards, setAchievementStandards] = useState('')
-  const [evaluationCriteria, setEvaluationCriteria] = useState('')
+  const [evaluationCriteria, setEvaluationCriteria] = useState({
+    excellent: '',
+    good: '',
+    average: '',
+    needsImprovement: ''
+  })
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedSurvey, setGeneratedSurvey] = useState<any>(null)
 
@@ -272,15 +277,55 @@ export default function GeneratePage() {
               />
             </div>
 
-            <div>
-              <Label htmlFor="criteria">평가기준</Label>
-              <Textarea
-                id="criteria"
-                value={evaluationCriteria}
-                onChange={(e) => setEvaluationCriteria(e.target.value)}
-                placeholder="학생들을 평가할 기준을 입력하세요"
-                rows={3}
-              />
+            {/* 4단계 평가기준 */}
+            <div className="space-y-4">
+              <Label>4단계 평가기준</Label>
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="excellent" className="text-sm font-medium">매우잘함</Label>
+                  <Textarea
+                    id="excellent"
+                    value={evaluationCriteria.excellent}
+                    onChange={(e) => setEvaluationCriteria(prev => ({ ...prev, excellent: e.target.value }))}
+                    placeholder="매우잘함 수준의 평가 기준을 입력하세요"
+                    rows={2}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="good" className="text-sm font-medium">잘함</Label>
+                  <Textarea
+                    id="good"
+                    value={evaluationCriteria.good}
+                    onChange={(e) => setEvaluationCriteria(prev => ({ ...prev, good: e.target.value }))}
+                    placeholder="잘함 수준의 평가 기준을 입력하세요"
+                    rows={2}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="average" className="text-sm font-medium">보통</Label>
+                  <Textarea
+                    id="average"
+                    value={evaluationCriteria.average}
+                    onChange={(e) => setEvaluationCriteria(prev => ({ ...prev, average: e.target.value }))}
+                    placeholder="보통 수준의 평가 기준을 입력하세요"
+                    rows={2}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="needsImprovement" className="text-sm font-medium">노력요함</Label>
+                  <Textarea
+                    id="needsImprovement"
+                    value={evaluationCriteria.needsImprovement}
+                    onChange={(e) => setEvaluationCriteria(prev => ({ ...prev, needsImprovement: e.target.value }))}
+                    placeholder="노력요함 수준의 평가 기준을 입력하세요"
+                    rows={2}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-3">
