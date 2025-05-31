@@ -13,8 +13,7 @@ interface ClassInfo {
   id: string
   class_name: string
   grade: string
-  class_number: string
-  student_count: number
+  students?: string[]
 }
 
 export default function CreativeActivitiesPage() {
@@ -56,7 +55,7 @@ export default function CreativeActivitiesPage() {
         .select('*')
         .eq('user_id', user.id)
         .order('grade', { ascending: true })
-        .order('class_number', { ascending: true })
+        .order('class_name', { ascending: true })
 
       if (error) throw error
 
@@ -139,7 +138,7 @@ export default function CreativeActivitiesPage() {
                       <SelectItem key={classItem.id} value={classItem.id}>
                         <div className="flex items-center gap-2">
                           <Users className="h-4 w-4" />
-                          {classItem.class_name} ({classItem.student_count}명)
+                          {classItem.class_name} ({classItem.students?.length || 0}명)
                         </div>
                       </SelectItem>
                     ))}
