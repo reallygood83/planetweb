@@ -124,60 +124,41 @@ export default function CreativeActivitiesPage() {
           </div>
 
           {/* 학급 선택 */}
-          {classes.length > 0 ? (
-            <>
-              <Card className="mb-6">
-                <CardHeader>
-                  <CardTitle>학급 선택</CardTitle>
-                  <CardDescription>
-                    창의적 체험활동을 관리할 학급을 선택하세요
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Select value={selectedClassId} onValueChange={setSelectedClassId}>
-                    <SelectTrigger className="w-full md:w-96">
-                      <SelectValue placeholder="학급을 선택하세요" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {classes.map((classItem) => (
-                        <SelectItem key={classItem.id} value={classItem.id}>
-                          <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4" />
-                            {classItem.class_name} ({classItem.student_count}명)
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </CardContent>
-              </Card>
-
-              {/* 활동 관리 */}
-              {selectedClass && (
-                <CreativeActivitiesManager
-                  classId={selectedClass.id}
-                  className={selectedClass.class_name}
-                  semester={semester}
-                  onSemesterChange={setSemester}
-                />
-              )}
-            </>
-          ) : (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  등록된 학급이 없습니다
-                </h3>
-                <p className="text-gray-500 mb-4">
-                  먼저 학급을 등록해주세요
-                </p>
-                <Button onClick={() => router.push('/dashboard/class')}>
-                  학급 등록하기
-                </Button>
+          {classes.length > 0 && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>학급 선택</CardTitle>
+                <CardDescription>
+                  창의적 체험활동을 관리할 학급을 선택하세요
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                  <SelectTrigger className="w-full md:w-96">
+                    <SelectValue placeholder="학급을 선택하세요" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classes.map((classItem) => (
+                      <SelectItem key={classItem.id} value={classItem.id}>
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          {classItem.class_name} ({classItem.student_count}명)
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </CardContent>
             </Card>
           )}
+
+          {/* 활동 관리 - 학급 선택 여부와 관계없이 표시 */}
+          <CreativeActivitiesManager
+            classId={selectedClassId || 'temp-id'}
+            className={selectedClass?.class_name || '학급명'}
+            semester={semester}
+            onSemesterChange={setSemester}
+          />
         </div>
       </div>
     </div>
