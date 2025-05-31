@@ -42,7 +42,33 @@ export async function POST(request: NextRequest) {
     }
 
     // API 키 확인
-    const geminiApiKey = apiKey || process.env.GEMINI_API_KEY
+    let geminiApiKey = apiKey
+    
+    // 사용자가 제공한 API 키가 없으면 환경 변수 사용
+    if (!geminiApiKey) {
+      // 사용자 프로필에서 암호화된 API 키 조회
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('encrypted_api_key')
+        .eq('id', user.id)
+        .single()
+      
+      if (profile?.encrypted_api_key) {
+        try {
+          const { decryptApiKey } = await import('@/lib/utils')
+          const encryptKey = process.env.NEXT_PUBLIC_ENCRYPT_KEY || 'default-key'
+          geminiApiKey = decryptApiKey(profile.encrypted_api_key, encryptKey)
+        } catch (decryptError) {
+          console.error('Failed to decrypt API key:', decryptError)
+        }
+      }
+      
+      // 그래도 없으면 환경 변수 사용
+      if (!geminiApiKey) {
+        geminiApiKey = process.env.GEMINI_API_KEY
+      }
+    }
+    
     if (!geminiApiKey) {
       return NextResponse.json({ 
         error: 'API key not configured' 

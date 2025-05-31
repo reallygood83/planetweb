@@ -88,11 +88,16 @@ export default function GenerateCreativeActivityPage() {
     setGeneratedContent('')
     
     try {
-      const apiKey = localStorage.getItem('gemini_api_key')
-      if (!apiKey) {
+      // 암호화된 API 키 가져오기 및 복호화
+      const encryptedKey = localStorage.getItem('gemini_api_key')
+      if (!encryptedKey) {
         alert('API 키가 설정되지 않았습니다. 대시보드에서 설정해주세요.')
         return
       }
+
+      // 복호화
+      const { decryptApiKey } = await import('@/lib/utils')
+      const apiKey = decryptApiKey(encryptedKey, process.env.NEXT_PUBLIC_ENCRYPT_KEY!)
 
       const response = await fetch('/api/creative-activities/generate', {
         method: 'POST',
