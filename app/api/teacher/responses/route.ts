@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const surveyId = searchParams.get('surveyId')
     const classId = searchParams.get('classId')
+    const studentName = searchParams.get('studentName')
 
     // Build query
     let query = supabase
@@ -34,11 +35,6 @@ export async function GET(request: NextRequest) {
             achievement_standards,
             evaluation_criteria
           )
-        ),
-        classes (
-          id,
-          class_name,
-          grade
         )
       `)
       .eq('surveys.user_id', user.id)
@@ -48,7 +44,19 @@ export async function GET(request: NextRequest) {
       query = query.eq('survey_id', surveyId)
     }
     if (classId) {
-      query = query.eq('class_id', classId)
+      // class_id로 class_name을 먼저 찾아야 함
+      const { data: classData } = await supabase
+        .from('classes')
+        .select('class_name')
+        .eq('id', classId)
+        .single()
+      
+      if (classData) {
+        query = query.eq('class_name', classData.class_name)
+      }
+    }
+    if (studentName) {
+      query = query.eq('student_name', studentName)
     }
 
     // Execute query
@@ -65,15 +73,15 @@ export async function GET(request: NextRequest) {
       id: response.id,
       survey_id: response.survey_id,
       student_name: response.student_name,
-      class_id: response.class_id,
+      class_name: response.class_name,
       responses: response.responses,
       submitted_at: response.submitted_at,
       survey: response.surveys ? {
+        id: response.surveys.id,
         title: response.surveys.title,
         questions: response.surveys.questions,
-        evaluation_plan: response.surveys.evaluation_plans
-      } : null,
-      class: response.classes
+        evaluation_plans: response.surveys.evaluation_plans
+      } : null
     })) || []
 
     return NextResponse.json({ 
