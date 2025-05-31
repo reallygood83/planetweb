@@ -55,6 +55,7 @@ export default function ActivitySelector({
 
   useEffect(() => {
     fetchActivities()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classId, semester])
 
   const fetchActivities = async () => {

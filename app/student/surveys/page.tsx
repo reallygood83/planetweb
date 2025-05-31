@@ -58,7 +58,6 @@ function StudentSurveysContent() {
 
     setStudentInfo(parsedStudentInfo)
     fetchSurveys(classCode)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, router])
 
   const fetchSurveys = async (classCode: string) => {

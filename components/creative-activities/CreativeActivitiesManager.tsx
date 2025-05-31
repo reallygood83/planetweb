@@ -4,11 +4,8 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Trash2, Save, Calendar, BookOpen, Users, Heart, Briefcase } from 'lucide-react'
-import { format } from 'date-fns'
-import { ko } from 'date-fns/locale'
+import { Plus, Trash2, Save, BookOpen, Users, Heart, Briefcase } from 'lucide-react'
 
 interface CreativeActivity {
   id?: string
@@ -40,6 +37,7 @@ export default function CreativeActivitiesManager({ classId, className, semester
 
   useEffect(() => {
     fetchActivities()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classId, semester])
 
   const fetchActivities = async () => {
