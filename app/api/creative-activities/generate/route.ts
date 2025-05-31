@@ -149,9 +149,9 @@ function createCreativeActivityPrompt({
   }, {} as Record<string, any[]>)
 
   const activitiesDescription = Object.entries(activitiesByArea)
-    .map(([area, areaActivities]) => {
+    .map(([area, areaActivities]: [string, any[]]) => {
       const activityList = areaActivities
-        .map(a => `- ${new Date(a.activity_date).toLocaleDateString('ko-KR')}: ${a.activity_name}`)
+        .map((a: any) => `- ${new Date(a.activity_date).toLocaleDateString('ko-KR')}: ${a.activity_name}`)
         .join('\n')
       return `[${area}]\n${activityList}`
     })
