@@ -42,7 +42,7 @@ function StudentSurveysContent() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const classCode = searchParams?.get('code')
+    const classCode = searchParams?.get('classCode')
     const storedStudentInfo = sessionStorage.getItem('studentInfo')
 
     if (!classCode || !storedStudentInfo) {
@@ -81,7 +81,7 @@ function StudentSurveysContent() {
   }
 
   const handleTakeSurvey = (survey: Survey) => {
-    router.push(`/student/survey/${survey.id}?code=${studentInfo?.classCode}`)
+    router.push(`/student/survey/${survey.id}?classCode=${studentInfo?.classCode}`)
   }
 
   const handleBackToJoin = () => {

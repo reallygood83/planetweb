@@ -12,16 +12,19 @@ export async function GET(request: NextRequest) {
 
     const supabase = await createClient()
 
-    // Find class by code
+    // Find class by school code
     const { data: classData, error: classError } = await supabase
       .from('classes')
-      .select('id, name, user_id')
-      .eq('code', classCode)
+      .select('id, class_name, user_id, school_code')
+      .eq('school_code', classCode)
       .single()
 
     if (classError || !classData) {
+      console.error('Class lookup error:', classError, 'for code:', classCode)
       return NextResponse.json({ error: 'Invalid class code' }, { status: 404 })
     }
+
+    console.log('Found class:', classData)
 
     // Get active surveys for this class
     const { data: surveys, error: surveysError } = await supabase

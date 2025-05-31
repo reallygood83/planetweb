@@ -55,7 +55,7 @@ function TakeSurveyContent() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
-    const classCode = searchParams?.get('code')
+    const classCode = searchParams?.get('classCode')
     const shareCode = searchParams?.get('share')
     const storedStudentInfo = sessionStorage.getItem('studentInfo')
 

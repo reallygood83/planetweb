@@ -27,28 +27,33 @@ function StudentPageContent() {
 
   const handleJoinClass = async () => {
     if (!classCode.trim() || !studentName.trim()) {
-      alert('학급 코드와 이름을 모두 입력해주세요.')
+      alert('접근 코드와 이름을 모두 입력해주세요.')
       return
     }
 
     setIsLoading(true)
     try {
+      const code = classCode.trim()
+      
       // Store student info in sessionStorage
       sessionStorage.setItem('studentInfo', JSON.stringify({
-        classCode: classCode.trim(),
+        classCode: code,
         studentName: studentName.trim()
       }))
       
       // 공유 코드로 접근한 경우 특정 설문으로 바로 이동
       if (surveyId && shareCode) {
         router.push(`/student/survey/${surveyId}?share=${shareCode}`)
+      } else if (code.startsWith('S')) {
+        // 설문 공유 코드인 경우 - 설문 ID를 찾아서 바로 이동
+        alert('설문 공유 코드는 직접 링크로 접근해주세요.')
       } else {
-        // 일반 학급 코드로 접근한 경우 설문 목록으로 이동
-        router.push(`/student/surveys?code=${classCode.trim()}`)
+        // 학급 코드로 접근한 경우 설문 목록으로 이동
+        router.push(`/student/surveys?classCode=${code}`)
       }
     } catch (error) {
       console.error('Error joining class:', error)
-      alert('학급 참여 중 오류가 발생했습니다.')
+      alert('참여 중 오류가 발생했습니다.')
     } finally {
       setIsLoading(false)
     }
@@ -74,26 +79,29 @@ function StudentPageContent() {
                 <Users className="h-6 w-6 text-blue-600" />
               </div>
               <CardTitle>
-                {shareCode ? '설문 참여하기' : '학급 참여하기'}
+                {shareCode ? '설문 참여하기' : '코드 입력하기'}
               </CardTitle>
               <CardDescription>
                 {shareCode 
                   ? '이름을 입력하고 설문에 참여하세요'
-                  : '선생님께서 알려주신 학급 코드를 입력해주세요'
+                  : '선생님께서 알려주신 코드를 입력해주세요'
                 }
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {!shareCode && (
                 <div className="space-y-2">
-                  <Label htmlFor="classCode">학급 코드</Label>
+                  <Label htmlFor="classCode">접근 코드</Label>
                   <Input
                     id="classCode"
-                    placeholder="예: ABC123"
+                    placeholder="학급코드(ABC123) 또는 설문코드(SDEF45)"
                     value={classCode}
                     onChange={(e) => setClassCode(e.target.value.toUpperCase())}
                     className="text-center font-mono text-lg"
                   />
+                  <p className="text-xs text-gray-500 text-center">
+                    학급코드: 여러 설문 목록 보기 | 설문코드: 특정 설문 바로 접근
+                  </p>
                 </div>
               )}
               
@@ -112,14 +120,14 @@ function StudentPageContent() {
                 disabled={isLoading || !classCode.trim() || !studentName.trim()}
                 className="w-full"
               >
-                {isLoading ? '참여 중...' : '학급 참여하기'}
+                {isLoading ? '참여 중...' : '참여하기'}
               </Button>
             </CardContent>
           </Card>
 
           {/* Info */}
           <div className="mt-8 text-center text-sm text-gray-500">
-            <p>학급 코드는 담임선생님께 문의하세요</p>
+            <p>코드를 모르시나요? 담임선생님께 문의하세요</p>
           </div>
         </div>
       </div>

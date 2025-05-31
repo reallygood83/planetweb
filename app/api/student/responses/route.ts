@@ -77,14 +77,50 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Student has already responded to this survey' }, { status: 409 })
     }
 
-    // Save response
+    // Save response with proper class name and school code
+    let className = '공유 링크'
+    let schoolCode = null
+    
+    if (classData) {
+      // Fetch the actual class name and school code from the classes table
+      const { data: classInfo } = await supabase
+        .from('classes')
+        .select('class_name, school_code')
+        .eq('id', classData.id)
+        .single()
+      
+      if (classInfo) {
+        className = classInfo.class_name
+        schoolCode = classInfo.school_code
+      }
+    } else if (classCode && !classCode.startsWith('S')) {
+      // 학급 코드로 직접 접근한 경우, 실제 class_name 찾기
+      const { data: classInfo } = await supabase
+        .from('classes')
+        .select('class_name, school_code')
+        .eq('school_code', classCode)
+        .single()
+      
+      if (classInfo) {
+        className = classInfo.class_name
+        schoolCode = classInfo.school_code
+      } else {
+        // 학급을 찾을 수 없는 경우 코드만 저장
+        className = classCode
+        schoolCode = classCode
+      }
+    }
+
     const responseData = {
       survey_id: surveyId,
       student_name: studentName,
-      class_name: classData ? `${classCode}` : '공유 링크',
+      class_name: className,
+      school_code: schoolCode,
       responses: responses,
       submitted_at: new Date().toISOString()
     }
+    
+    console.log('Saving response with class_name:', className, 'school_code:', schoolCode, 'for class code:', classCode)
 
     const { data, error } = await supabase
       .from('survey_responses')

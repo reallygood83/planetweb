@@ -204,8 +204,8 @@ export default function GenerateBatchPage() {
         }))
       }
 
-      // API 속도 제한을 위한 지연
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // API 속도 제한을 위한 지연 (Gemini 무료 tier: 10 requests/minute)
+      await new Promise(resolve => setTimeout(resolve, 6000))
     }
 
     setIsGenerating(false)

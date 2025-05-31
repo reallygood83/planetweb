@@ -12,24 +12,26 @@ interface SurveyResponse {
   id: string
   survey_id: string
   student_name: string
-  class_id: string
+  class_name: string
+  school_code?: string
   responses: {
     multipleChoice: { [key: number]: string }
     shortAnswer: { [key: number]: string }
   }
   submitted_at: string
   survey?: {
+    id: string
     title: string
-    evaluation_plan?: {
+    questions: any
+    evaluation_plans?: {
+      id: string
       subject: string
       grade: string
       semester: string
       unit: string
+      achievement_standards: string
+      evaluation_criteria: string
     }
-  }
-  class?: {
-    class_name: string
-    grade: string
   }
 }
 
@@ -51,11 +53,22 @@ export default function ResponsesPage() {
   const fetchResponses = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/teacher/responses')
+      
+      // Try the simple API first for debugging
+      const response = await fetch('/api/teacher/responses-simple')
       const data = await response.json()
 
       if (data.success) {
+        console.log('Fetched responses:', data.data)
+        console.log('Debug info:', data.debug)
         setResponses(data.data)
+      } else {
+        console.error('Failed to fetch responses:', data.error)
+        
+        // Try the debug API if simple fails
+        const debugResponse = await fetch('/api/debug/responses')
+        const debugData = await debugResponse.json()
+        console.log('Debug API response:', debugData)
       }
     } catch (error) {
       console.error('Error fetching responses:', error)
@@ -66,14 +79,13 @@ export default function ResponsesPage() {
 
   // 필터링된 응답
   const filteredResponses = responses.filter(response => {
-    if (selectedClass !== 'all' && response.class_id !== selectedClass) return false
+    if (selectedClass !== 'all' && response.class_name !== selectedClass) return false
     if (selectedSurvey !== 'all' && response.survey_id !== selectedSurvey) return false
     return true
   })
 
   // 고유한 학급과 설문 목록
-  const uniqueClasses = Array.from(new Set(responses.map(r => r.class_id)))
-    .map(id => responses.find(r => r.class_id === id)?.class)
+  const uniqueClasses = Array.from(new Set(responses.map(r => r.class_name)))
     .filter(Boolean)
 
   const uniqueSurveys = Array.from(new Set(responses.map(r => r.survey_id)))
@@ -88,7 +100,7 @@ export default function ResponsesPage() {
   }
 
   filteredResponses.forEach(response => {
-    const className = response.class?.class_name || 'Unknown'
+    const className = response.class_name || 'Unknown'
     const surveyTitle = response.survey?.title || 'Unknown'
     
     responseStats.byClass[className] = (responseStats.byClass[className] || 0) + 1
@@ -165,9 +177,9 @@ export default function ResponsesPage() {
                 className="w-full px-3 py-2 border rounded-md"
               >
                 <option value="all">전체 학급</option>
-                {uniqueClasses.map(cls => (
-                  <option key={cls?.class_name} value={responses.find(r => r.class?.class_name === cls?.class_name)?.class_id}>
-                    {cls?.class_name} ({cls?.grade})
+                {uniqueClasses.map(className => (
+                  <option key={className} value={className}>
+                    {className}
                   </option>
                 ))}
               </select>
@@ -226,11 +238,14 @@ export default function ResponsesPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="font-medium">{response.student_name}</h3>
-                        <Badge variant="outline">{response.class?.class_name}</Badge>
-                        <Badge>{response.survey?.evaluation_plan?.subject}</Badge>
+                        <Badge variant="outline">{response.class_name}</Badge>
+                        {response.school_code && response.class_name !== response.school_code && (
+                          <Badge variant="secondary">{response.school_code}</Badge>
+                        )}
+                        <Badge>{response.survey?.evaluation_plans?.subject || '과목 정보 없음'}</Badge>
                       </div>
                       <p className="text-sm text-gray-600 mb-2">
-                        {response.survey?.title} - {response.survey?.evaluation_plan?.unit}
+                        {response.survey?.title} - {response.survey?.evaluation_plans?.unit || '단원 정보 없음'}
                       </p>
                       <div className="flex items-center gap-4 text-sm text-gray-500">
                         <span className="flex items-center gap-1">
@@ -278,7 +293,7 @@ export default function ResponsesPage() {
           responseData={{
             id: selectedResponse.id,
             student_name: selectedResponse.student_name,
-            class_name: selectedResponse.class?.class_name || '',
+            class_name: selectedResponse.class_name || '',
             survey: selectedResponse.survey
           }}
         />
