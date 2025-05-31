@@ -583,6 +583,19 @@ export default function GenerateRecordPage() {
                   * 구체적이고 객관적인 관찰 내용을 입력하면 더 정확한 생기부가 생성됩니다.
                 </p>
               </div>
+
+              {/* Additional Context */}
+              <div className="space-y-2">
+                <Label htmlFor="additionalContext">추가 맥락 (선택)</Label>
+                <Textarea
+                  id="additionalContext"
+                  placeholder="특별한 프로젝트, 학급 분위기, 개별 학생 특성 등 추가로 고려할 사항이 있다면 입력하세요..."
+                  value={additionalContext}
+                  onChange={(e) => setAdditionalContext(e.target.value)}
+                  rows={3}
+                  className="resize-none"
+                />
+              </div>
             </CardContent>
           </Card>
         )
