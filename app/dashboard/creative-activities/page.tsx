@@ -62,10 +62,7 @@ export default function CreativeActivitiesPage() {
 
       setClasses(classesData || [])
       
-      // 첫 번째 학급 자동 선택
-      if (classesData && classesData.length > 0) {
-        setSelectedClassId(classesData[0].id)
-      }
+      // 첫 번째 학급 자동 선택은 제거 - 사용자가 명시적으로 선택하도록
     } catch (error) {
       console.error('Error fetching classes:', error)
     } finally {
@@ -152,13 +149,27 @@ export default function CreativeActivitiesPage() {
             </Card>
           )}
 
-          {/* 활동 관리 - 학급 선택 여부와 관계없이 표시 */}
-          <CreativeActivitiesManager
-            classId={selectedClassId || 'temp-id'}
-            className={selectedClass?.class_name || '학급명'}
-            semester={semester}
-            onSemesterChange={setSemester}
-          />
+          {/* 활동 관리 - 학급이 선택되었을 때만 표시 */}
+          {selectedClassId && selectedClass ? (
+            <CreativeActivitiesManager
+              classId={selectedClassId}
+              className={selectedClass.class_name}
+              semester={semester}
+              onSemesterChange={setSemester}
+            />
+          ) : (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  학급을 선택해주세요
+                </h3>
+                <p className="text-gray-500">
+                  창의적 체험활동을 관리할 학급을 먼저 선택해주세요
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       .select('*')
       .eq('user_id', user.id)
 
-    if (classId) {
+    if (classId && classId !== 'temp-id') {
       query = query.eq('class_id', classId)
     }
 
@@ -54,9 +54,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { classId, activities, semester } = body
 
-    if (!classId || !activities || !semester) {
+    if (!classId || !activities || !semester || classId === 'temp-id') {
       return NextResponse.json({ 
-        error: 'Missing required fields' 
+        error: 'Valid class ID required' 
       }, { status: 400 })
     }
 
