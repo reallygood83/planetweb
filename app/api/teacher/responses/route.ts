@@ -23,13 +23,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('survey_responses')
       .select(`
-        id,
-        survey_id,
-        student_name,
-        class_name,
-        school_code,
-        responses,
-        submitted_at,
+        *,
         surveys!inner (
           id,
           title,
