@@ -114,6 +114,7 @@ export default function GenerateCreativeActivityPage() {
 
       if (!response.ok) {
         const error = await response.json()
+        console.error('API Error Response:', error)
         throw new Error(error.error || 'Failed to generate content')
       }
 

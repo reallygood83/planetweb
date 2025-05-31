@@ -7,10 +7,15 @@ export async function POST(request: NextRequest) {
     
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ 
+        error: 'Unauthorized',
+        details: authError?.message 
+      }, { status: 401 })
     }
 
     const body = await request.json()
+    console.log('Generate request body:', body)
+    
     const { 
       classId,
       studentName,
@@ -23,7 +28,13 @@ export async function POST(request: NextRequest) {
     // 필수 필드 검증
     if (!classId || !studentName || !semester || !selectedActivityIds || selectedActivityIds.length === 0) {
       return NextResponse.json({ 
-        error: 'Missing required fields' 
+        error: 'Missing required fields',
+        details: {
+          classId: !!classId,
+          studentName: !!studentName,
+          semester: !!semester,
+          selectedActivityIds: selectedActivityIds?.length || 0
+        }
       }, { status: 400 })
     }
 
@@ -110,7 +121,9 @@ export async function POST(request: NextRequest) {
       const errorData = await geminiResponse.text()
       console.error('Gemini API Error:', errorData)
       return NextResponse.json({ 
-        error: 'Failed to generate content' 
+        error: 'Failed to generate content',
+        details: errorData,
+        status: geminiResponse.status
       }, { status: 500 })
     }
 
@@ -152,7 +165,11 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('API Error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      stack: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.stack : undefined : undefined
+    }, { status: 500 })
   }
 }
 
