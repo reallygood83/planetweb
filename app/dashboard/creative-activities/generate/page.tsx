@@ -11,10 +11,15 @@ import { ArrowLeft, FileText, Sparkles, Copy, Check } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import ActivitySelector from '@/components/creative-activities/ActivitySelector'
 
+interface Student {
+  number: number
+  name: string
+}
+
 interface ClassInfo {
   id: string
   class_name: string
-  students: string[]
+  students: (string | Student)[]
 }
 
 export default function GenerateCreativeActivityPage() {
@@ -62,7 +67,8 @@ export default function GenerateCreativeActivityPage() {
       if (classesData && classesData.length > 0) {
         setSelectedClassId(classesData[0].id)
         if (classesData[0].students && classesData[0].students.length > 0) {
-          setSelectedStudent(classesData[0].students[0])
+          const firstStudent = classesData[0].students[0]
+          setSelectedStudent(typeof firstStudent === 'string' ? firstStudent : firstStudent.name)
         }
       }
     } catch (error) {
@@ -179,7 +185,8 @@ export default function GenerateCreativeActivityPage() {
                       setSelectedClassId(value)
                       const newClass = classes.find(c => c.id === value)
                       if (newClass?.students?.[0]) {
-                        setSelectedStudent(newClass.students[0])
+                        const firstStudent = newClass.students[0]
+                        setSelectedStudent(typeof firstStudent === 'string' ? firstStudent : firstStudent.name)
                       }
                       setSelectedActivityIds([])
                     }}>
@@ -203,11 +210,14 @@ export default function GenerateCreativeActivityPage() {
                         <SelectValue placeholder="학생을 선택하세요" />
                       </SelectTrigger>
                       <SelectContent>
-                        {students.map((student) => (
-                          <SelectItem key={student} value={student}>
-                            {student}
-                          </SelectItem>
-                        ))}
+                        {students.map((student, index) => {
+                          const studentName = typeof student === 'string' ? student : student.name
+                          return (
+                            <SelectItem key={studentName || index} value={studentName}>
+                              {studentName}
+                            </SelectItem>
+                          )
+                        })}
                       </SelectContent>
                     </Select>
                   </div>
