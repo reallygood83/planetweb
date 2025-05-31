@@ -324,8 +324,8 @@ export default function GenerateRecordPage() {
     switch (step) {
       case 1: return selectedClass !== null
       case 2: return selectedStudent !== null
-      case 3: return true // 자기평가는 선택사항
-      case 4: {
+      case 3: {
+        // 3단계: 추가 정보 입력
         const hasTeacherNotes = teacherNotes.trim() !== ''
         
         // 교과학습발달상황인 경우 평가 계획이나 과목 선택 필요
@@ -338,6 +338,7 @@ export default function GenerateRecordPage() {
         
         return hasTeacherNotes
       }
+      case 4: return true // 자기평가는 선택사항
       case 5: return generatedContent !== null
       default: return false
     }
@@ -427,8 +428,172 @@ export default function GenerateRecordPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                3단계: 추가 정보 입력
+              </CardTitle>
+              <CardDescription>
+                AI가 더 정확한 생기부를 작성할 수 있도록 추가 정보를 입력하세요.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Record Type Selection */}
+              <div className="space-y-3">
+                <Label htmlFor="recordType">작성할 생기부 항목</Label>
+                <div className="grid gap-3">
+                  {[
+                    '교과학습발달상황',
+                    '창의적 체험활동 누가기록',
+                    '행동특성 및 종합의견'
+                  ].map((type) => (
+                    <div
+                      key={type}
+                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                        recordType === type
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => setRecordType(type)}
+                    >
+                      <div className="font-medium">{type}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Evaluation Plan Selection (for 교과학습발달상황) */}
+              {recordType === '교과학습발달상황' && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="evaluationPlan">평가 계획 선택 (복수 선택 가능)</Label>
+                    
+                    {evaluationPlans.length > 0 ? (
+                      <div className="space-y-2">
+                        {evaluationPlans.map((plan) => (
+                          <div
+                            key={plan.id}
+                            className={`p-3 rounded-lg border transition-colors ${
+                              selectedEvaluationPlans.some(p => p.id === plan.id)
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <Checkbox
+                                checked={selectedEvaluationPlans.some(p => p.id === plan.id)}
+                                onCheckedChange={() => handleEvaluationPlanToggle(plan)}
+                                className="mt-1"
+                              />
+                              <div className="flex-1">
+                                <div className="font-medium flex items-center gap-2">
+                                  <Target className="h-4 w-4 text-blue-600" />
+                                  {plan.subject} - {plan.unit}
+                                </div>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  <Badge variant="secondary">{plan.grade}</Badge>
+                                  <Badge variant="outline">{plan.semester}</Badge>
+                                </div>
+                                {plan.learning_objectives && Array.isArray(plan.learning_objectives) && plan.learning_objectives.length > 0 && (
+                                  <p className="text-sm text-gray-600 mt-2">
+                                    목표: {plan.learning_objectives.join(', ')}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <Target className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                        <p className="mb-4">등록된 평가계획이 없습니다.</p>
+                        <p className="text-sm">평가계획을 먼저 등록하거나 아래에서 직접 과목을 선택하세요.</p>
+                      </div>
+                    )}
+
+                    {/* Selected Plans Summary */}
+                    {selectedEvaluationPlans.length > 0 && (
+                      <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                        <p className="text-sm font-medium text-blue-900 mb-2">
+                          선택된 평가계획 ({selectedEvaluationPlans.length}개)
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedEvaluationPlans.map((plan) => (
+                            <Badge key={plan.id} variant="default" className="text-xs">
+                              {plan.subject} - {plan.unit}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Subject Selection (when no evaluation plan) */}
+                  {selectedEvaluationPlans.length === 0 && (
+                    <div className="space-y-2">
+                      <Label htmlFor="subject">과목 직접 입력</Label>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {['국어', '수학', '사회', '과학', '영어', '체육', '음악', '미술', '실과', '도덕', '창체'].map((subj) => (
+                          <div
+                            key={subj}
+                            className={`p-2 text-center rounded border cursor-pointer transition-colors ${
+                              selectedSubject === subj
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                            onClick={() => setSelectedSubject(selectedSubject === subj ? '' : subj)}
+                          >
+                            <span className="text-sm font-medium">{subj}</span>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Custom Subject Input */}
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="text-sm text-gray-500">기타:</span>
+                        <input
+                          type="text"
+                          placeholder="직접 입력"
+                          value={selectedSubject && !['국어', '수학', '사회', '과학', '영어', '체육', '음악', '미술', '실과', '도덕', '창체'].includes(selectedSubject) ? selectedSubject : ''}
+                          onChange={(e) => setSelectedSubject(e.target.value)}
+                          className="flex-1 px-2 py-1 text-sm border rounded"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Teacher Notes */}
+              <div className="space-y-2">
+                <Label htmlFor="teacherNotes">교사 관찰 기록 *</Label>
+                <Textarea
+                  id="teacherNotes"
+                  placeholder="학생의 구체적인 학습 활동, 행동 관찰 내용, 성취 수준 등을 입력하세요...
+
+예시:
+- 수학 시간에 분수 덧셈 문제를 스스로 해결하려고 노력함
+- 모둠 활동 시 친구들의 의견을 경청하고 자신의 생각을 논리적으로 표현함
+- 어려운 문제를 만나도 포기하지 않고 끝까지 시도하는 끈기를 보임"
+                  value={teacherNotes}
+                  onChange={(e) => setTeacherNotes(e.target.value)}
+                  rows={8}
+                  className="resize-none"
+                />
+                <p className="text-xs text-gray-500">
+                  * 구체적이고 객관적인 관찰 내용을 입력하면 더 정확한 생기부가 생성됩니다.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )
+
+      case 4:
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                3단계: 자기평가 선택 (선택) - {selectedStudent?.name}
+                4단계: 자기평가 선택 (선택) - {selectedStudent?.name}
               </CardTitle>
               <CardDescription>
                 생기부 작성에 활용할 자기평가 결과를 선택하세요. 자기평가 없이도 생기부 생성이 가능합니다.
@@ -516,45 +681,6 @@ export default function GenerateRecordPage() {
                 </div>
               )}
             </CardContent>
-          </Card>
-        )
-
-      case 4:
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                4단계: 추가 정보 입력
-              </CardTitle>
-              <CardDescription>
-                AI가 더 정확한 생기부를 작성할 수 있도록 추가 정보를 입력하세요.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Record Type Selection */}
-              <div className="space-y-3">
-                <Label htmlFor="recordType">작성할 생기부 항목</Label>
-                <div className="grid gap-3">
-                  {[
-                    '교과학습발달상황',
-                    '창의적 체험활동 누가기록',
-                    '행동특성 및 종합의견'
-                  ].map((type) => (
-                    <div
-                      key={type}
-                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                        recordType === type
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                      onClick={() => setRecordType(type)}
-                    >
-                      <div className="font-medium">{type}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
 
               {/* Evaluation Plan Selection (for 교과학습발달상황) */}
               {recordType === '교과학습발달상황' && (
