@@ -63,18 +63,26 @@ function StudentSurveysContent() {
 
   const fetchSurveys = async (classCode: string) => {
     try {
+      console.log('Fetching surveys for classCode:', classCode)
       const response = await fetch(`/api/student/surveys?classCode=${classCode}`)
+      
+      console.log('Response status:', response.status)
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch surveys')
+        const errorText = await response.text()
+        console.error('API Error:', response.status, errorText)
+        throw new Error(`Failed to fetch surveys: ${response.status}`)
       }
       
       const data = await response.json()
+      console.log('Survey data received:', data)
+      
       setClassInfo(data.class)
-      setSurveys(data.surveys)
+      setSurveys(data.surveys || [])
     } catch (error) {
       console.error('Error fetching surveys:', error)
-      alert('설문을 불러오는 중 오류가 발생했습니다.')
-      router.push('/student')
+      alert(`설문을 불러오는 중 오류가 발생했습니다: ${error}`)
+      // router.push('/student') // 주석 처리하여 페이지 이동 방지
     } finally {
       setIsLoading(false)
     }
@@ -149,9 +157,11 @@ function StudentSurveysContent() {
                           {survey.title}
                         </CardTitle>
                         <CardDescription className="flex items-center gap-4">
-                          <Badge variant="secondary">
-                            {survey.evaluation_plans.subject} | {survey.evaluation_plans.grade} | {survey.evaluation_plans.semester}
-                          </Badge>
+                          {survey.evaluation_plans && (
+                            <Badge variant="secondary">
+                              {survey.evaluation_plans.subject} | {survey.evaluation_plans.grade} | {survey.evaluation_plans.semester}
+                            </Badge>
+                          )}
                           <span className="flex items-center gap-1 text-sm text-gray-500">
                             <Clock className="h-4 w-4" />
                             {new Date(survey.created_at).toLocaleDateString('ko-KR')}
@@ -163,8 +173,8 @@ function StudentSurveysContent() {
                   <CardContent>
                     <div className="flex items-center justify-between">
                       <div className="text-sm text-gray-600">
-                        객관식 {survey.questions.multipleChoice.length}문항 + 
-                        주관식 {survey.questions.shortAnswer.length}문항
+                        객관식 {survey.questions?.multipleChoice?.length || 0}문항 + 
+                        주관식 {survey.questions?.shortAnswer?.length || 0}문항
                       </div>
                       <Button onClick={() => handleTakeSurvey(survey)}>
                         설문 참여하기
