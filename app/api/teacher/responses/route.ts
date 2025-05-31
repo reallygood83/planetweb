@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 전체 응답 수도 확인해보자 (디버깅용)
-    const { data: allResponses, error: allError } = await supabase
+    const { data: allResponses } = await supabase
       .from('survey_responses')
       .select('id, class_name, school_code, survey_id, surveys!inner(user_id)')
       .eq('surveys.user_id', user.id)
