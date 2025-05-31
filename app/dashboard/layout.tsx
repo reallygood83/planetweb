@@ -67,6 +67,7 @@ export default function DashboardLayout({
         { name: '개별생성', href: '/dashboard/generate-record' },
         { name: '일괄생성', href: '/dashboard/generate-batch' },
         { name: '생기부관리', href: '/dashboard/records' },
+        { name: '창의적체험활동', href: '/dashboard/creative-activities' },
       ]
     },
   ]
