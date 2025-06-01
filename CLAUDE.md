@@ -11,10 +11,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-This is a Next.js 14 application using the App Router pattern for a Korean educational platform called "Planet" (Student Record AI Helper) that helps teachers generate student evaluation records using AI.
+This is a Next.js 15 application using the App Router pattern for a Korean educational platform called "생기부 AI 도우미" (Student Record AI Helper) that helps teachers generate student evaluation records using AI.
 
 ### Core Technology Stack
-- **Frontend**: Next.js 14, TypeScript, Tailwind CSS, Radix UI components
+- **Frontend**: Next.js 15, TypeScript, Tailwind CSS, Radix UI components
 - **Backend**: Supabase (PostgreSQL, Authentication, Real-time)
 - **AI Integration**: Google Gemini API via @google/generative-ai
 - **State Management**: Zustand, React Context for auth
@@ -55,13 +55,22 @@ This is a Next.js 14 application using the App Router pattern for a Korean educa
 **AI Integration Pattern**
 - User provides their own Gemini API key (cost management)
 - Keys encrypted client-side before storage
-- AI generates educational content following Korean NEIS standards (500 char limit, formal tone)
-- Supports batch generation for entire classes
+- AI generates educational content following Korean NEIS standards:
+  - 교과학습발달상황: 500 character limit, single paragraph format
+  - 창의적 체험활동: 200 character limit, integrated format
+  - Formal tone required for all content
+- Supports batch generation for entire classes with rate limiting (6s delay between requests)
 
 **Survey System**
 - Teachers create surveys linked to evaluation plans
-- Students submit self-assessments
+- Students submit self-assessments via class codes
 - Responses feed into AI content generation
+
+**Creative Activities System**
+- Teachers input semester activities in table format (order/date/activity name/area)
+- 4 activity areas: 자율활동, 동아리활동, 봉사활동, 진로활동
+- Multiple activities can be selected for record generation per student
+- Generated records are limited to 200 characters
 
 ## Environment Setup
 
@@ -81,5 +90,39 @@ Core tables:
 - `generated_contents` - AI-generated student evaluation text
 - `school_groups` + `group_memberships` - Collaboration system
 - `surveys` + `survey_responses` - Student self-assessment system
+- `creative_activities` - Semester activity records by class
+- `creative_activity_records` - Generated creative experience records
 
 All tables use UUIDs and include Row Level Security policies.
+
+## Important Implementation Details
+
+### Student Data Structure
+Classes table stores students as JSONB array that can contain either:
+- Simple strings: `["홍길동", "김철수"]`
+- Objects with number/name: `[{"number": 1, "name": "홍길동"}]`
+
+Always handle both formats when processing student data.
+
+### API Key Management
+1. Users input their Gemini API key in dashboard
+2. Key is encrypted client-side using AES
+3. Encrypted key stored in localStorage
+4. Decrypted only when making API calls
+5. Key hint (last 4 chars) stored in database
+
+### Rate Limiting
+- Gemini free tier: 10 requests/minute
+- Batch generation includes 6s delay between requests
+- Error handling for rate limit responses
+
+### Character Limits
+- 교과학습발달상황: 500 characters (single paragraph)
+- 창의적 체험활동: 200 characters (integrated format)
+- 행동특성 및 종합의견: 500 characters
+
+### School Code System
+- Simple 4-10 character alphanumeric codes
+- Used for student survey access
+- Set during class creation or updated later
+- No complex validation or join flow

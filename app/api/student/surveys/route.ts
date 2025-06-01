@@ -21,7 +21,23 @@ export async function GET(request: NextRequest) {
 
     if (classError || !classData) {
       console.error('Class lookup error:', classError, 'for code:', classCode)
-      return NextResponse.json({ error: 'Invalid class code' }, { status: 404 })
+      
+      // Additional debugging - check if school_code column exists
+      const { data: allClasses, error: allError } = await supabase
+        .from('classes')
+        .select('id, class_name, school_code')
+        .limit(5)
+      
+      console.error('Sample classes data:', allClasses, 'error:', allError)
+      
+      return NextResponse.json({ 
+        error: 'Invalid class code',
+        debug: {
+          searchedCode: classCode,
+          classError: classError?.message,
+          sampleClasses: allClasses?.map(c => ({ id: c.id, name: c.class_name, code: c.school_code }))
+        }
+      }, { status: 404 })
     }
 
     console.log('Found class:', classData)
