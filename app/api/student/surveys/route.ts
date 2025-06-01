@@ -12,14 +12,13 @@ export async function GET(request: NextRequest) {
 
     const supabase = await createClient()
 
-    // Find class by school code
-    const { data: classData, error: classError } = await supabase
+    // Find class by school code - handle potential duplicates
+    const { data: classDataArray, error: classError } = await supabase
       .from('classes')
       .select('id, class_name, user_id, school_code')
       .eq('school_code', classCode)
-      .single()
 
-    if (classError || !classData) {
+    if (classError || !classDataArray || classDataArray.length === 0) {
       console.error('Class lookup error:', classError, 'for code:', classCode)
       
       // Additional debugging - check if school_code column exists
@@ -40,6 +39,8 @@ export async function GET(request: NextRequest) {
       }, { status: 404 })
     }
 
+    // Use the first class if multiple found
+    const classData = classDataArray[0]
     console.log('Found class:', classData)
 
     // Get active surveys for this class
