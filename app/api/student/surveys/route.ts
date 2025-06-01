@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,7 +11,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Class code is required' }, { status: 400 })
     }
 
-    const supabase = await createClient()
+    // Use service role client to bypass RLS for public student access
+    const supabase = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
 
     // Find class by school code - handle potential duplicates
     const { data: classDataArray, error: classError } = await supabase
