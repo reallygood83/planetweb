@@ -11,6 +11,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Class code is required' }, { status: 400 })
     }
 
+    // Debug environment variables
+    console.log('Environment check:', {
+      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL?.slice(0, 30) + '...'
+    })
+
     // Use service role client to bypass RLS for public student access
     const supabase = createServiceClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
