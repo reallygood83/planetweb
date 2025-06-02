@@ -248,8 +248,12 @@ export function CreateEvaluationModal({ open, onOpenChange, onSubmit }: CreateEv
                     id="lesson"
                     value={formData.lesson}
                     onChange={(e) => setFormData({ ...formData, lesson: e.target.value })}
-                    placeholder="예: 3/10차시"
+                    placeholder="예: 3/10차시, 1차시, 5차시"
                   />
+                  <p className="text-xs text-gray-500">
+                    💡 한 단원에서 여러 평가를 진행할 경우 차시를 구분해주세요.
+                    <br />같은 단원이라도 차시가 다르면 별도 평가계획으로 생성됩니다.
+                  </p>
                 </div>
               </div>
 

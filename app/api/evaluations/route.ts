@@ -68,21 +68,40 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 평가계획 중복 확인 (같은 과목, 학년, 학기, 학년도, 단원)
-    const { data: existingPlan } = await supabase
+    // 평가계획 중복 확인 (같은 과목, 학년, 학기, 학년도, 단원, 차시)
+    // 차시가 있는 경우에만 중복 체크, 없으면 단원별 구분만
+    let duplicateCheckQuery = supabase
       .from('evaluation_plans')
-      .select('id')
+      .select('id, lesson')
       .eq('user_id', user.id)
       .eq('subject', subject)
       .eq('grade', grade)
       .eq('semester', semester)
       .eq('school_year', school_year || new Date().getFullYear().toString())
       .eq('unit', unit)
-      .maybeSingle()
 
-    if (existingPlan) {
+    // 차시가 있는 경우 차시까지 포함해서 중복 체크
+    if (lesson && lesson.trim()) {
+      duplicateCheckQuery = duplicateCheckQuery.eq('lesson', lesson.trim())
+    }
+
+    const { data: existingPlans } = await duplicateCheckQuery
+
+    // 차시가 없는 새 평가계획인데, 같은 단원에 차시가 없는 계획이 이미 있는 경우
+    if ((!lesson || !lesson.trim()) && existingPlans && existingPlans.length > 0) {
+      const hasLessonlessPlans = existingPlans.some(plan => !plan.lesson || !plan.lesson.trim())
+      if (hasLessonlessPlans) {
+        return NextResponse.json(
+          { error: 'A general evaluation plan already exists for this unit. Please specify a lesson number or create a more specific evaluation plan.' }, 
+          { status: 409 }
+        )
+      }
+    }
+
+    // 차시가 있는 새 평가계획인데, 같은 차시 계획이 이미 있는 경우
+    if (lesson && lesson.trim() && existingPlans && existingPlans.length > 0) {
       return NextResponse.json(
-        { error: 'Evaluation plan already exists for this subject, grade, semester, school year, and unit' }, 
+        { error: `Evaluation plan already exists for lesson "${lesson}" in this unit. Please use a different lesson number or modify the existing plan.` }, 
         { status: 409 }
       )
     }
