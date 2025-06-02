@@ -53,7 +53,7 @@ export function SmartPasteModal({ open, onOpenChange, onSuccess }: SmartPasteMod
   }
 
   const handleAnalyze = async () => {
-    let contentToAnalyze = text.trim()
+    const contentToAnalyze = text.trim()
 
     if (inputMethod === 'file' && uploadedFile) {
       await handleFileUpload(uploadedFile)
