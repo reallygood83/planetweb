@@ -68,8 +68,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 평가계획 중복 확인 (같은 과목, 학년, 학기, 학년도, 단원, 차시)
+    // 평가계획 중복 확인 (같은 과목, 학년, 학기, 단원, 차시)
     // 차시가 있는 경우에만 중복 체크, 없으면 단원별 구분만
+    // TODO: school_year 컬럼 추가 후 다시 활성화
     let duplicateCheckQuery = supabase
       .from('evaluation_plans')
       .select('id, lesson')
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
       .eq('subject', subject)
       .eq('grade', grade)
       .eq('semester', semester)
-      .eq('school_year', school_year || new Date().getFullYear().toString())
+      // .eq('school_year', school_year || new Date().getFullYear().toString())
       .eq('unit', unit)
 
     // 차시가 있는 경우 차시까지 포함해서 중복 체크
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
         subject,
         grade,
         semester,
-        school_year: school_year || new Date().getFullYear().toString(),
+        // school_year: school_year || new Date().getFullYear().toString(), // TODO: 컬럼 추가 후 활성화
         unit,
         lesson,
         achievement_standards: achievement_standards || [],
