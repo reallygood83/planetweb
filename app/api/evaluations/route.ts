@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
       subject, 
       grade, 
       semester, 
+      school_year,
       unit,
       lesson,
       achievement_standards,
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 평가계획 중복 확인 (같은 과목, 학년, 학기, 단원)
+    // 평가계획 중복 확인 (같은 과목, 학년, 학기, 학년도, 단원)
     const { data: existingPlan } = await supabase
       .from('evaluation_plans')
       .select('id')
@@ -75,12 +76,13 @@ export async function POST(request: NextRequest) {
       .eq('subject', subject)
       .eq('grade', grade)
       .eq('semester', semester)
+      .eq('school_year', school_year || new Date().getFullYear().toString())
       .eq('unit', unit)
-      .single()
+      .maybeSingle()
 
     if (existingPlan) {
       return NextResponse.json(
-        { error: 'Evaluation plan already exists for this subject, grade, semester, and unit' }, 
+        { error: 'Evaluation plan already exists for this subject, grade, semester, school year, and unit' }, 
         { status: 409 }
       )
     }
@@ -93,6 +95,7 @@ export async function POST(request: NextRequest) {
         subject,
         grade,
         semester,
+        school_year: school_year || new Date().getFullYear().toString(),
         unit,
         lesson,
         achievement_standards: achievement_standards || [],
