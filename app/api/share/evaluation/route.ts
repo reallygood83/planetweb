@@ -188,7 +188,17 @@ export async function GET(request: Request) {
     }
 
     if (!evaluation) {
-      return NextResponse.json({ error: '평가계획을 찾을 수 없습니다.' }, { status: 404 });
+      console.error('평가계획을 찾을 수 없음:', {
+        evaluation_plan_id: share.evaluation_plan_id,
+        share_code: shareCode
+      });
+      return NextResponse.json({ 
+        error: '연결된 평가계획을 찾을 수 없습니다. 평가계획이 삭제되었을 수 있습니다.',
+        debug: {
+          shareExists: true,
+          evaluationPlanId: share.evaluation_plan_id
+        }
+      }, { status: 404 });
     }
 
     // 세 번째 단계: 사용자 정보 조회
