@@ -25,18 +25,27 @@ export function EvaluationList({ evaluations, onDelete, onEdit, onGenerateSurvey
           <CardHeader>
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <BookOpen className="h-5 w-5 text-blue-600" />
-                  {evaluation.subject}
+                <CardTitle className="text-lg flex items-center gap-2 mb-2">
+                  <BookOpen className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                  <span className="truncate">{evaluation.subject}</span>
                 </CardTitle>
-                <CardDescription className="flex items-center gap-4 mt-1">
-                  <span className="flex items-center gap-1">
+                
+                {/* 기본 정보 행 */}
+                <CardDescription className="flex items-center gap-2 text-xs mb-1 flex-wrap">
+                  <span className="flex items-center gap-1 flex-shrink-0">
                     <Calendar className="h-3 w-3" />
                     {evaluation.grade} • {evaluation.semester}
                   </span>
-                  <span className="text-blue-600 font-medium">
-                    {evaluation.unit}
-                  </span>
+                  {evaluation.school_year && (
+                    <span className="text-purple-600 font-medium bg-purple-50 px-2 py-0.5 rounded">
+                      {evaluation.school_year}년
+                    </span>
+                  )}
+                </CardDescription>
+                
+                {/* 단원명 행 */}
+                <CardDescription className="text-blue-600 font-medium text-sm truncate">
+                  {evaluation.unit}
                 </CardDescription>
               </div>
               <div className="flex gap-1">
