@@ -93,6 +93,7 @@ export function CreateEvaluationModal({ open, onOpenChange, onSubmit }: CreateEv
         subject: '',
         grade: '',
         semester: '',
+        school_year: new Date().getFullYear().toString(),
         unit: '',
         lesson: '',
         achievement_standards: [{ code: '', content: '' }],
