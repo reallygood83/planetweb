@@ -123,7 +123,7 @@ export function ShareEvaluationModal({ evaluation, isOpen, onClose }: ShareEvalu
               </div>
 
               <Button
-                onClick={handleGenerateShare}
+                onClick={() => handleGenerateShare()}
                 disabled={loading}
                 className="w-full"
               >
