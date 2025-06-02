@@ -102,6 +102,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '공유 코드 생성에 실패했습니다.' }, { status: 500 });
     }
 
+    console.log('새 공유 링크 삽입 시도:', {
+      evaluation_plan_id: evaluationPlanId,
+      share_code: shareCode,
+      created_by: user.id,
+      allow_copy: allowCopy,
+      expires_at: expiresInDays ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString() : null
+    });
+
     const { data: newShare, error: insertError } = await supabase
       .from('evaluation_shares')
       .insert({
@@ -114,7 +122,10 @@ export async function POST(request: Request) {
       .select()
       .single();
 
+    console.log('삽입 결과:', { newShare, insertError });
+
     if (insertError) {
+      console.error('삽입 오류 상세:', insertError);
       throw insertError;
     }
 
