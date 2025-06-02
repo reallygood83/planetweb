@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
 // 평가계획 공유 링크 생성
@@ -28,7 +29,9 @@ export async function POST(request: Request) {
       .select('id, subject, grade, semester')
       .eq('id', evaluationPlanId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    console.log('평가계획 소유권 확인:', { evaluation, evalError, evaluationPlanId, userId: user.id });
 
     if (evalError || !evaluation) {
       return NextResponse.json({ error: '평가계획을 찾을 수 없습니다.' }, { status: 404 });
@@ -173,8 +176,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: '유효하지 않은 공유 코드입니다.' }, { status: 404 });
     }
 
-    // 두 번째 단계: 평가계획 정보 조회
-    const { data: evaluation, error: evalError } = await supabase
+    // 두 번째 단계: 평가계획 정보 조회 (서비스 키로 RLS 우회)
+    const serviceSupabase = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    
+    const { data: evaluation, error: evalError } = await serviceSupabase
       .from('evaluation_plans')
       .select('*')
       .eq('id', share.evaluation_plan_id)
@@ -201,8 +209,8 @@ export async function GET(request: Request) {
       }, { status: 404 });
     }
 
-    // 세 번째 단계: 사용자 정보 조회
-    const { data: userProfile, error: userError } = await supabase
+    // 세 번째 단계: 사용자 정보 조회 (서비스 키 사용)
+    const { data: userProfile, error: userError } = await serviceSupabase
       .from('profiles')
       .select('name')
       .eq('id', evaluation.user_id)
