@@ -150,6 +150,9 @@ CREATE INDEX IF NOT EXISTS idx_student_evaluations_class_id ON student_evaluatio
 CREATE INDEX IF NOT EXISTS idx_generated_contents_user_id ON generated_contents(user_id);
 CREATE INDEX IF NOT EXISTS idx_school_groups_code ON school_groups(code);
 CREATE INDEX IF NOT EXISTS idx_group_memberships_user_id ON group_memberships(user_id);
+CREATE INDEX IF NOT EXISTS idx_evaluation_shares_code ON evaluation_shares(share_code);
+CREATE INDEX IF NOT EXISTS idx_evaluation_shares_expires ON evaluation_shares(expires_at);
+CREATE INDEX IF NOT EXISTS idx_evaluation_shares_plan_id ON evaluation_shares(evaluation_plan_id);
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -176,6 +179,22 @@ CREATE TRIGGER update_school_groups_updated_at BEFORE UPDATE ON school_groups
 CREATE TRIGGER update_surveys_updated_at BEFORE UPDATE ON surveys
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+-- Create evaluation_shares table
+CREATE TABLE IF NOT EXISTS evaluation_shares (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    evaluation_plan_id UUID NOT NULL REFERENCES evaluation_plans(id) ON DELETE CASCADE,
+    share_code VARCHAR(6) UNIQUE NOT NULL,
+    created_by UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    expires_at TIMESTAMP WITH TIME ZONE DEFAULT (TIMEZONE('utc', NOW()) + INTERVAL '30 days'),
+    allow_copy BOOLEAN DEFAULT false,
+    view_count INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+CREATE TRIGGER update_evaluation_shares_updated_at BEFORE UPDATE ON evaluation_shares
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- Row Level Security (RLS)
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE evaluation_plans ENABLE ROW LEVEL SECURITY;
@@ -187,6 +206,7 @@ ALTER TABLE group_memberships ENABLE ROW LEVEL SECURITY;
 ALTER TABLE shared_contents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE surveys ENABLE ROW LEVEL SECURITY;
 ALTER TABLE survey_responses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE evaluation_shares ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
 
@@ -331,6 +351,24 @@ CREATE POLICY "Survey owners can view responses" ON survey_responses
             AND surveys.user_id = auth.uid()
         )
     );
+
+-- Evaluation shares policies
+CREATE POLICY "Users can create shares for own evaluation plans" ON evaluation_shares
+    FOR INSERT WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM evaluation_plans 
+            WHERE id = evaluation_plan_id AND user_id = auth.uid()
+        )
+    );
+
+CREATE POLICY "Anyone can view shared evaluations" ON evaluation_shares
+    FOR SELECT USING (true);
+
+CREATE POLICY "Creators can update their shares" ON evaluation_shares
+    FOR UPDATE USING (created_by = auth.uid());
+
+CREATE POLICY "Creators can delete their shares" ON evaluation_shares
+    FOR DELETE USING (created_by = auth.uid());
 
 -- Function to create user profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()

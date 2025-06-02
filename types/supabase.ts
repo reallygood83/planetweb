@@ -310,6 +310,41 @@ export interface Database {
           submitted_at?: string
         }
       }
+      evaluation_shares: {
+        Row: {
+          id: string
+          evaluation_plan_id: string
+          share_code: string
+          created_by: string
+          expires_at: string | null
+          allow_copy: boolean
+          view_count: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          evaluation_plan_id: string
+          share_code: string
+          created_by: string
+          expires_at?: string | null
+          allow_copy?: boolean
+          view_count?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          evaluation_plan_id?: string
+          share_code?: string
+          created_by?: string
+          expires_at?: string | null
+          allow_copy?: boolean
+          view_count?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never

@@ -7,12 +7,16 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     
+    console.log('공유 링크 생성 요청 - 사용자:', user?.email);
+    
     if (!user) {
       return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
     }
 
     const body = await request.json();
     const { evaluationPlanId, allowCopy = false, expiresInDays = 30 } = body;
+
+    console.log('요청 데이터:', { evaluationPlanId, allowCopy, expiresInDays });
 
     if (!evaluationPlanId) {
       return NextResponse.json({ error: '평가계획 ID가 필요합니다.' }, { status: 400 });
@@ -122,30 +126,58 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const shareCode = searchParams.get('code');
 
+    console.log('공유 코드 조회 요청:', shareCode);
+
     if (!shareCode) {
       return NextResponse.json({ error: '공유 코드가 필요합니다.' }, { status: 400 });
     }
 
     const supabase = await createClient();
 
-    // 공유 정보 조회
+    // 첫 번째 단계: 공유 정보만 조회
     const { data: share, error: shareError } = await supabase
       .from('evaluation_shares')
-      .select(`
-        *,
-        evaluation_plan:evaluation_plans (
-          *,
-          user:profiles (
-            name
-          )
-        )
-      `)
+      .select('*')
       .eq('share_code', shareCode)
       .single();
 
-    if (shareError || !share) {
+    console.log('공유 정보 조회 결과:', { share, shareError });
+
+    if (shareError) {
+      console.error('공유 정보 조회 오류:', shareError);
+      return NextResponse.json({ error: `데이터베이스 오류: ${shareError.message}` }, { status: 500 });
+    }
+
+    if (!share) {
       return NextResponse.json({ error: '유효하지 않은 공유 코드입니다.' }, { status: 404 });
     }
+
+    // 두 번째 단계: 평가계획 정보 조회
+    const { data: evaluation, error: evalError } = await supabase
+      .from('evaluation_plans')
+      .select('*')
+      .eq('id', share.evaluation_plan_id)
+      .single();
+
+    console.log('평가계획 조회 결과:', { evaluation, evalError });
+
+    if (evalError) {
+      console.error('평가계획 조회 오류:', evalError);
+      return NextResponse.json({ error: `평가계획 조회 오류: ${evalError.message}` }, { status: 500 });
+    }
+
+    if (!evaluation) {
+      return NextResponse.json({ error: '평가계획을 찾을 수 없습니다.' }, { status: 404 });
+    }
+
+    // 세 번째 단계: 사용자 정보 조회
+    const { data: userProfile, error: userError } = await supabase
+      .from('profiles')
+      .select('name')
+      .eq('id', evaluation.user_id)
+      .single();
+
+    console.log('사용자 정보 조회 결과:', { userProfile, userError });
 
     // 만료 확인
     if (share.expires_at && new Date(share.expires_at) < new Date()) {
@@ -166,13 +198,17 @@ export async function GET(request: Request) {
       console.warn('조회수 업데이트 실패:', updateError);
     }
 
-    return NextResponse.json({
-      evaluation: share.evaluation_plan,
+    const result = {
+      evaluation: evaluation,
       allowCopy: share.allow_copy,
       viewCount: share.view_count + 1,
-      sharedBy: share.evaluation_plan.user?.name || '익명',
+      sharedBy: userProfile?.name || '익명',
       expiresAt: share.expires_at
-    });
+    };
+
+    console.log('최종 응답 데이터:', result);
+
+    return NextResponse.json(result);
 
   } catch (error) {
     console.error('공유 평가계획 조회 오류:', error);
