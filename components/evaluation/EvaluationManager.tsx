@@ -66,9 +66,9 @@ export function EvaluationManager({
     [...new Set(evaluations.map(e => e.semester))].sort()
   , [evaluations])
 
-  const uniqueYears = useMemo(() => 
-    [...new Set(evaluations.map(e => getYearFromDate(e.created_at)))].sort((a, b) => b.localeCompare(a))
-  , [evaluations])
+  // const uniqueYears = useMemo(() => 
+  //   [...new Set(evaluations.map(e => getYearFromDate(e.created_at)))].sort((a, b) => b.localeCompare(a))
+  // , [evaluations])
 
   // 필터링된 평가계획
   const filteredEvaluations = useMemo(() => {
