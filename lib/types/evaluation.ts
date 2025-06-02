@@ -37,6 +37,7 @@ export interface EvaluationPlan {
   subject: string
   grade: string
   semester: string
+  school_year: string             // 학년도 (예: "2025")
   unit: string                    // 단원명
   lesson?: string                 // 차시
   
@@ -103,3 +104,18 @@ export const GRADES = [
 export const SEMESTERS = [
   "1학기", "2학기"
 ] as const
+
+// 학년도 옵션 (현재 년도 기준으로 생성)
+export const getSchoolYears = () => {
+  const currentYear = new Date().getFullYear()
+  const years = []
+  
+  // 과거 3년부터 미래 2년까지
+  for (let i = currentYear - 3; i <= currentYear + 2; i++) {
+    years.push(i.toString())
+  }
+  
+  return years
+}
+
+export const SCHOOL_YEARS = getSchoolYears()

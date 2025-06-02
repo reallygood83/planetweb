@@ -38,6 +38,9 @@ export function EvaluationCard({
                 <Calendar className="h-3 w-3" />
                 {evaluation.grade} • {evaluation.semester}
               </span>
+              <span className="text-purple-600 font-medium text-xs">
+                {evaluation.school_year}년
+              </span>
               <span className="text-blue-600 font-medium">
                 {evaluation.unit}
               </span>

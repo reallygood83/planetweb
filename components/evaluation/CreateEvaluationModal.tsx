@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { EvaluationPlan, AIGenerationTarget, SUBJECTS, GRADES, SEMESTERS, EVALUATION_METHODS, EVALUATION_TOOLS } from '@/lib/types/evaluation'
+import { EvaluationPlan, AIGenerationTarget, SUBJECTS, GRADES, SEMESTERS, SCHOOL_YEARS, EVALUATION_METHODS, EVALUATION_TOOLS } from '@/lib/types/evaluation'
 import { X, Plus, Trash2 } from 'lucide-react'
 
 interface CreateEvaluationModalProps {
@@ -20,6 +20,7 @@ export function CreateEvaluationModal({ open, onOpenChange, onSubmit }: CreateEv
     subject: '',
     grade: '',
     semester: '',
+    school_year: new Date().getFullYear().toString(), // 기본값: 현재 년도
     unit: '',
     lesson: '',
     
@@ -208,6 +209,21 @@ export function CreateEvaluationModal({ open, onOpenChange, onSubmit }: CreateEv
                     <option value="">선택하세요</option>
                     {SEMESTERS.map(semester => (
                       <option key={semester} value={semester}>{semester}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="school_year">학년도 *</Label>
+                  <select
+                    id="school_year"
+                    value={formData.school_year}
+                    onChange={(e) => setFormData({ ...formData, school_year: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-md"
+                    required
+                  >
+                    {SCHOOL_YEARS.map(year => (
+                      <option key={year} value={year}>{year}년</option>
                     ))}
                   </select>
                 </div>

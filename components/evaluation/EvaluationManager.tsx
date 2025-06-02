@@ -28,8 +28,8 @@ interface EvaluationManagerProps {
   onBulkDelete?: (evaluationIds: string[]) => void
 }
 
-type GroupBy = 'none' | 'subject' | 'grade' | 'semester' | 'year'
-type SortBy = 'created_at' | 'subject' | 'grade' | 'semester'
+type GroupBy = 'none' | 'subject' | 'grade' | 'semester' | 'school_year'
+type SortBy = 'created_at' | 'subject' | 'grade' | 'semester' | 'school_year'
 
 export function EvaluationManager({ 
   evaluations, 
@@ -47,6 +47,7 @@ export function EvaluationManager({
   const [selectedSubjects, setSelectedSubjects] = useState<Set<string>>(new Set())
   const [selectedGrades, setSelectedGrades] = useState<Set<string>>(new Set())
   const [selectedSemesters, setSelectedSemesters] = useState<Set<string>>(new Set())
+  const [selectedSchoolYears, setSelectedSchoolYears] = useState<Set<string>>(new Set())
 
   // 년도 추출 함수
   const getYearFromDate = (dateString: string) => {
@@ -66,9 +67,9 @@ export function EvaluationManager({
     [...new Set(evaluations.map(e => e.semester))].sort()
   , [evaluations])
 
-  // const uniqueYears = useMemo(() => 
-  //   [...new Set(evaluations.map(e => getYearFromDate(e.created_at)))].sort((a, b) => b.localeCompare(a))
-  // , [evaluations])
+  const uniqueSchoolYears = useMemo(() => 
+    [...new Set(evaluations.map(e => e.school_year || getYearFromDate(e.created_at)))].sort((a, b) => b.localeCompare(a))
+  , [evaluations])
 
   // 필터링된 평가계획
   const filteredEvaluations = useMemo(() => {
@@ -87,10 +88,14 @@ export function EvaluationManager({
       
       // 학기 필터
       const matchesSemester = selectedSemesters.size === 0 || selectedSemesters.has(evaluation.semester)
+      
+      // 학년도 필터
+      const evaluationYear = evaluation.school_year || getYearFromDate(evaluation.created_at)
+      const matchesSchoolYear = selectedSchoolYears.size === 0 || selectedSchoolYears.has(evaluationYear)
 
-      return matchesSearch && matchesSubject && matchesGrade && matchesSemester
+      return matchesSearch && matchesSubject && matchesGrade && matchesSemester && matchesSchoolYear
     })
-  }, [evaluations, searchTerm, selectedSubjects, selectedGrades, selectedSemesters])
+  }, [evaluations, searchTerm, selectedSubjects, selectedGrades, selectedSemesters, selectedSchoolYears])
 
   // 정렬된 평가계획
   const sortedEvaluations = useMemo(() => {
@@ -102,6 +107,10 @@ export function EvaluationManager({
           return a.grade.localeCompare(b.grade)
         case 'semester':
           return a.semester.localeCompare(b.semester)
+        case 'school_year':
+          const aYear = a.school_year || getYearFromDate(a.created_at)
+          const bYear = b.school_year || getYearFromDate(b.created_at)
+          return bYear.localeCompare(aYear) // 최신 년도가 먼저
         case 'created_at':
         default:
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -130,8 +139,8 @@ export function EvaluationManager({
         case 'semester':
           groupKey = evaluation.semester
           break
-        case 'year':
-          groupKey = `${getYearFromDate(evaluation.created_at)}년`
+        case 'school_year':
+          groupKey = `${evaluation.school_year || getYearFromDate(evaluation.created_at)}년`
           break
         default:
           groupKey = '전체'
@@ -194,6 +203,7 @@ export function EvaluationManager({
     setSelectedSubjects(new Set())
     setSelectedGrades(new Set())
     setSelectedSemesters(new Set())
+    setSelectedSchoolYears(new Set())
     setSearchTerm('')
   }
 
@@ -264,6 +274,7 @@ export function EvaluationManager({
                 <option value="subject">과목명순</option>
                 <option value="grade">학년순</option>
                 <option value="semester">학기순</option>
+                <option value="school_year">학년도순</option>
               </select>
             </div>
             
@@ -279,7 +290,7 @@ export function EvaluationManager({
                 <option value="subject">과목별</option>
                 <option value="grade">학년별</option>
                 <option value="semester">학기별</option>
-                <option value="year">년도별</option>
+                <option value="school_year">학년도별</option>
               </select>
             </div>
           </div>
@@ -308,7 +319,7 @@ export function EvaluationManager({
                 </Button>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {/* 과목 필터 */}
                 <div>
                   <Label>과목</Label>
@@ -389,6 +400,33 @@ export function EvaluationManager({
                     ))}
                   </div>
                 </div>
+
+                {/* 학년도 필터 */}
+                <div>
+                  <Label>학년도</Label>
+                  <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
+                    {uniqueSchoolYears.map(year => (
+                      <div key={year} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`school-year-${year}`}
+                          checked={selectedSchoolYears.has(year)}
+                          onCheckedChange={(checked) => {
+                            const newSelected = new Set(selectedSchoolYears)
+                            if (checked) {
+                              newSelected.add(year)
+                            } else {
+                              newSelected.delete(year)
+                            }
+                            setSelectedSchoolYears(newSelected)
+                          }}
+                        />
+                        <Label htmlFor={`school-year-${year}`} className="text-sm">
+                          {year}년
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -405,7 +443,7 @@ export function EvaluationManager({
                   {groupBy === 'subject' && <BookOpen className="h-5 w-5 text-blue-600" />}
                   {groupBy === 'grade' && <GraduationCap className="h-5 w-5 text-green-600" />}
                   {groupBy === 'semester' && <Calendar className="h-5 w-5 text-purple-600" />}
-                  {groupBy === 'year' && <Archive className="h-5 w-5 text-orange-600" />}
+                  {groupBy === 'school_year' && <Archive className="h-5 w-5 text-orange-600" />}
                   <h3 className="text-xl font-semibold">{groupKey}</h3>
                   <span className="text-sm text-gray-500">({groupEvaluations.length}개)</span>
                 </div>
