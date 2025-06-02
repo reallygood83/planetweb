@@ -5,6 +5,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/ca
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/auth-context'
 import { EvaluationList } from '@/components/evaluation/EvaluationList'
+import { EvaluationManager } from '@/components/evaluation/EvaluationManager'
 import { CreateEvaluationModal } from '@/components/evaluation/CreateEvaluationModal'
 import { EditEvaluationModal } from '@/components/evaluation/EditEvaluationModal'
 import { SmartPasteModal } from '@/components/evaluation/SmartPasteModal'
@@ -160,6 +161,29 @@ export default function EvaluationPage() {
     }
   }
 
+  const handleBulkDeleteEvaluations = async (evaluationIds: string[]) => {
+    try {
+      const response = await fetch('/api/evaluations/bulk-delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ evaluationIds }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setEvaluations(evaluations.filter(e => !evaluationIds.includes(e.id!)))
+        alert(data.message)
+      } else {
+        setError(data.error || '평가계획 일괄 삭제에 실패했습니다.')
+      }
+    } catch {
+      setError('네트워크 오류가 발생했습니다.')
+    }
+  }
+
   const handleSharedEvaluationCopySuccess = () => {
     // 공유된 평가계획을 복사했으므로 내 평가계획 목록을 새로고침
     fetchEvaluations()
@@ -274,12 +298,13 @@ export default function EvaluationPage() {
               </Card>
             </div>
           ) : (
-            <EvaluationList
+            <EvaluationManager
               evaluations={evaluations}
               onDelete={handleDeleteEvaluation}
               onEdit={handleEditEvaluation}
               onGenerateSurvey={handleGenerateSurvey}
               onShare={handleShareEvaluation}
+              onBulkDelete={handleBulkDeleteEvaluations}
             />
           )}
         </>
