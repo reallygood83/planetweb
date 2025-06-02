@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { EvaluationPlan } from '@/lib/types/evaluation'
-import { EvaluationList } from './EvaluationList'
+import { EvaluationCard } from './EvaluationCard'
 import { 
   Search, 
   Filter, 
@@ -425,11 +425,11 @@ export function EvaluationManager({
             )}
 
             {groupEvaluations.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {groupEvaluations.map((evaluation) => (
                   <div key={evaluation.id} className="relative">
                     {/* 선택 체크박스 */}
-                    <div className="absolute top-2 left-2 z-10">
+                    <div className="absolute top-3 left-3 z-10">
                       <Checkbox
                         checked={evaluation.id ? selectedIds.has(evaluation.id) : false}
                         onCheckedChange={(checked) => {
@@ -437,14 +437,14 @@ export function EvaluationManager({
                             handleSelectEvaluation(evaluation.id, checked as boolean)
                           }
                         }}
-                        className="bg-white border-2"
+                        className="bg-white shadow-sm border-2"
                       />
                     </div>
                     
                     {/* 평가계획 카드 */}
-                    <div className="ml-6">
-                      <EvaluationList
-                        evaluations={[evaluation]}
+                    <div className="pl-8">
+                      <EvaluationCard
+                        evaluation={evaluation}
                         onDelete={onDelete}
                         onEdit={onEdit}
                         onGenerateSurvey={onGenerateSurvey}
