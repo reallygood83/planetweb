@@ -35,12 +35,14 @@ export async function POST(request: Request) {
     }
 
     // 기존 공유 링크 확인
-    const { data: existingShare } = await supabase
+    const { data: existingShare, error: existingError } = await supabase
       .from('evaluation_shares')
       .select('*')
       .eq('evaluation_plan_id', evaluationPlanId)
       .eq('created_by', user.id)
-      .single();
+      .maybeSingle();
+
+    console.log('기존 공유 링크 확인:', { existingShare, existingError });
 
     if (existingShare) {
       // 기존 공유 설정 업데이트
@@ -81,7 +83,7 @@ export async function POST(request: Request) {
         .from('evaluation_shares')
         .select('id')
         .eq('share_code', randomCode)
-        .single();
+        .maybeSingle();
       
       if (!existing) {
         shareCode = randomCode;
@@ -139,7 +141,7 @@ export async function GET(request: Request) {
       .from('evaluation_shares')
       .select('*')
       .eq('share_code', shareCode)
-      .single();
+      .maybeSingle();
 
     console.log('공유 정보 조회 결과:', { share, shareError });
 
@@ -157,7 +159,7 @@ export async function GET(request: Request) {
       .from('evaluation_plans')
       .select('*')
       .eq('id', share.evaluation_plan_id)
-      .single();
+      .maybeSingle();
 
     console.log('평가계획 조회 결과:', { evaluation, evalError });
 
@@ -175,7 +177,7 @@ export async function GET(request: Request) {
       .from('profiles')
       .select('name')
       .eq('id', evaluation.user_id)
-      .single();
+      .maybeSingle();
 
     console.log('사용자 정보 조회 결과:', { userProfile, userError });
 
