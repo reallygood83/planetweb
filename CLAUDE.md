@@ -72,6 +72,12 @@ This is a Next.js 15 application using the App Router pattern for a Korean educa
 - Multiple activities can be selected for record generation per student
 - Generated records are limited to 200 characters
 
+**Student Survey Access Flow**
+- Students access surveys via school_code (4-10 character alphanumeric codes)
+- API endpoint `/api/student/surveys` uses service role key to bypass RLS
+- School codes are stored in classes table and must be unique
+- Survey responses are collected anonymously through dedicated endpoints
+
 ## Environment Setup
 
 Required environment variables:
@@ -86,7 +92,7 @@ Required environment variables:
 Core tables:
 - `profiles` - User metadata and encrypted API key hints
 - `evaluation_plans` - Curriculum plans for generating student records
-- `classes` - Student rosters organized by teacher
+- `classes` - Student rosters organized by teacher (includes school_code for student access)
 - `generated_contents` - AI-generated student evaluation text
 - `school_groups` + `group_memberships` - Collaboration system
 - `surveys` + `survey_responses` - Student self-assessment system
@@ -122,7 +128,20 @@ Always handle both formats when processing student data.
 - 행동특성 및 종합의견: 500 characters
 
 ### School Code System
-- Simple 4-10 character alphanumeric codes
-- Used for student survey access
-- Set during class creation or updated later
-- No complex validation or join flow
+- Simple 4-10 character alphanumeric codes stored in classes.school_code
+- Used for student survey access via `/api/student/surveys?classCode=`
+- Generated using `lib/simple-code-generator.ts` functions
+- Codes must be unique across all classes
+- Student APIs use service role key to bypass RLS for anonymous access
+
+### Database Migrations
+- Schema files in `/supabase/` directory
+- Run `fix_school_code.sql` if school_code column is missing from classes table
+- Use `debug_school_code.sql` to troubleshoot school code issues
+- Migration files may conflict - check execution order in production
+
+### Common Troubleshooting
+- Student survey 404 errors: Check if school_code column exists and has data
+- RLS access issues: Student APIs should use service role key, teacher APIs use regular auth
+- API key errors: Verify encryption/decryption and localStorage persistence
+- Rate limiting: Implement proper delays for batch operations

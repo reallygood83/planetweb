@@ -53,9 +53,34 @@ export default function SharedEvaluationPage() {
       return;
     }
 
-    // TODO: 복사 기능 구현
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      setCopied(true);
+      
+      const response = await fetch('/api/evaluations/copy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          shareCode: shareCode
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || '복사에 실패했습니다.');
+      }
+
+      alert('평가계획이 성공적으로 복사되었습니다!');
+      
+      // 대시보드로 이동
+      router.push('/dashboard/evaluation');
+      
+    } catch (error) {
+      setCopied(false);
+      alert(error instanceof Error ? error.message : '복사 중 오류가 발생했습니다.');
+    }
   };
 
   if (loading) {
