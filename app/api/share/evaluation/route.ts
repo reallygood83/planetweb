@@ -14,9 +14,9 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { evaluationPlanId, allowCopy = false, expiresInDays = 30 } = body;
+    const { evaluationPlanId, allowCopy = false, expiresInDays = 30, forceNew = false } = body;
 
-    console.log('요청 데이터:', { evaluationPlanId, allowCopy, expiresInDays });
+    console.log('요청 데이터:', { evaluationPlanId, allowCopy, expiresInDays, forceNew });
 
     if (!evaluationPlanId) {
       return NextResponse.json({ error: '평가계획 ID가 필요합니다.' }, { status: 400 });
@@ -44,8 +44,8 @@ export async function POST(request: Request) {
 
     console.log('기존 공유 링크 확인:', { existingShare, existingError });
 
-    if (existingShare) {
-      // 기존 공유 설정 업데이트
+    if (existingShare && !forceNew) {
+      // 기존 공유 설정 업데이트 (forceNew가 false일 때만)
       const { data: updated, error: updateError } = await supabase
         .from('evaluation_shares')
         .update({
@@ -66,6 +66,14 @@ export async function POST(request: Request) {
         shareUrl: `${process.env.NEXT_PUBLIC_APP_URL}/share/evaluation/${existingShare.share_code}`,
         ...updated
       });
+    }
+
+    // forceNew가 true이면 기존 공유 링크 삭제
+    if (existingShare && forceNew) {
+      await supabase
+        .from('evaluation_shares')
+        .delete()
+        .eq('id', existingShare.id);
     }
 
     // 새 공유 링크 생성 (안전한 방식)

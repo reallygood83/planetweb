@@ -26,7 +26,7 @@ export function ShareEvaluationModal({ evaluation, isOpen, onClose }: ShareEvalu
 
   if (!isOpen || !evaluation) return null
 
-  const handleGenerateShare = async () => {
+  const handleGenerateShare = async (forceNew = false) => {
     setLoading(true)
     try {
       const response = await fetch('/api/share/evaluation', {
@@ -35,7 +35,8 @@ export function ShareEvaluationModal({ evaluation, isOpen, onClose }: ShareEvalu
         body: JSON.stringify({
           evaluationPlanId: evaluation.id,
           allowCopy,
-          expiresInDays
+          expiresInDays,
+          forceNew // 새 코드 강제 생성 플래그
         })
       })
 
@@ -198,10 +199,11 @@ export function ShareEvaluationModal({ evaluation, isOpen, onClose }: ShareEvalu
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  onClick={handleGenerateShare}
+                  onClick={() => handleGenerateShare(true)}
+                  disabled={loading}
                   className="flex-1"
                 >
-                  재생성
+                  {loading ? '생성 중...' : '재생성'}
                 </Button>
                 <Button
                   onClick={resetModal}
