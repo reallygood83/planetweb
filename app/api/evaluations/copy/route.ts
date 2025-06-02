@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
@@ -19,14 +20,19 @@ export async function POST(request: NextRequest) {
     let sourceEvaluation
     
     if (shareCode) {
-      // 공유 코드로 평가계획 조회
-      const { data: shareData, error: shareError } = await supabase
+      // 서비스 키로 공유 코드 조회 (RLS 우회)
+      const serviceSupabase = createServiceClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      const { data: shareData, error: shareError } = await serviceSupabase
         .from('evaluation_shares')
         .select(`
-          evaluation_id,
+          evaluation_plan_id,
           allow_copy,
           expires_at,
-          evaluations (*)
+          evaluation_plans (*)
         `)
         .eq('share_code', shareCode)
         .single()
@@ -45,11 +51,11 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: '이 평가계획은 복사가 허용되지 않습니다.' }, { status: 403 })
       }
 
-      sourceEvaluation = shareData.evaluations
+      sourceEvaluation = shareData.evaluation_plans
     } else {
       // 직접 평가계획 ID로 조회 (같은 사용자의 평가계획만)
       const { data: evalData, error: evalError } = await supabase
-        .from('evaluations')
+        .from('evaluation_plans')
         .select('*')
         .eq('id', evaluationId)
         .eq('user_id', user.id)
@@ -66,20 +72,20 @@ export async function POST(request: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id, created_at, updated_at, user_id, ...evaluationData } = sourceEvaluation
     
-    // 제목에 "(복사본)" 추가하여 중복 방지
-    const copyTitle = evaluationData.title.includes('(복사본)') 
-      ? evaluationData.title 
-      : `${evaluationData.title} (복사본)`
+    // 과목명에 "(복사본)" 추가하여 중복 방지  
+    const copySubject = evaluationData.subject.includes('(복사본)') 
+      ? evaluationData.subject 
+      : `${evaluationData.subject} (복사본)`
 
     const newEvaluationData = {
       ...evaluationData,
-      title: copyTitle,
+      subject: copySubject,
       user_id: user.id,
     }
 
     // 새 평가계획 생성
     const { data: newEvaluation, error: createError } = await supabase
-      .from('evaluations')
+      .from('evaluation_plans')
       .insert(newEvaluationData)
       .select()
       .single()
