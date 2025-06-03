@@ -9,7 +9,7 @@ export async function GET() {
     // 현재 사용자 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
     }
 
     // 사용자의 모든 평가계획 조회
@@ -21,13 +21,13 @@ export async function GET() {
 
     if (error) {
       console.error('Error fetching evaluations:', error)
-      return NextResponse.json({ error: 'Failed to fetch evaluations' }, { status: 500 })
+      return NextResponse.json({ error: '평가계획 조회에 실패했습니다.' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, data: evaluations })
   } catch (error) {
     console.error('API Error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: '서버 내부 오류가 발생했습니다.' }, { status: 500 })
   }
 }
 
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     // 현재 사용자 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
     }
 
     const body = await request.json()
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     // 필수 필드 검증
     if (!subject || !grade || !semester || !unit) {
       return NextResponse.json(
-        { error: 'subject, grade, semester, unit are required' }, 
+        { error: '과목, 학년, 학기, 단원명은 필수 입력 항목입니다.' }, 
         { status: 400 }
       )
     }
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       const hasLessonlessPlans = existingPlans.some(plan => !plan.lesson || !plan.lesson.trim())
       if (hasLessonlessPlans) {
         return NextResponse.json(
-          { error: 'A general evaluation plan already exists for this unit. Please specify a lesson number or create a more specific evaluation plan.' }, 
+          { error: '이 단원에 이미 평가계획이 존재합니다. 차시 번호를 입력하여 구분해주세요.' }, 
           { status: 409 }
         )
       }
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     // 차시가 있는 새 평가계획인데, 같은 차시 계획이 이미 있는 경우
     if (lesson && lesson.trim() && existingPlans && existingPlans.length > 0) {
       return NextResponse.json(
-        { error: `Evaluation plan already exists for lesson "${lesson}" in this unit. Please use a different lesson number or modify the existing plan.` }, 
+        { error: `이 단원의 "${lesson}" 차시에 이미 평가계획이 있습니다. 다른 차시 번호를 사용하거나 기존 계획을 수정해주세요.` }, 
         { status: 409 }
       )
     }
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
         if (legacyError) {
           console.error('Legacy format also failed:', legacyError)
           return NextResponse.json({ 
-            error: 'Failed to create evaluation plan', 
+            error: '평가계획 생성에 실패했습니다.', 
             details: error.message 
           }, { status: 500 })
         }
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
       }
       
       return NextResponse.json({ 
-        error: 'Failed to create evaluation plan',
+        error: '평가계획 생성에 실패했습니다.',
         details: error.message 
       }, { status: 500 })
     }
@@ -179,6 +179,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, data: newEvaluation }, { status: 201 })
   } catch (error) {
     console.error('API Error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: '서버 내부 오류가 발생했습니다.' }, { status: 500 })
   }
 }
