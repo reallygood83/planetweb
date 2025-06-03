@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       subject, 
       grade, 
       semester, 
-      school_year,
+      // school_year, // 임시 비활성화
       unit,
       lesson,
       achievement_standards,
