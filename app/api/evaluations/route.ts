@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
       .eq('subject', subject)
       .eq('grade', grade)
       .eq('semester', semester)
-      .eq('school_year', school_year || new Date().getFullYear().toString())
+      // .eq('school_year', school_year || new Date().getFullYear().toString()) // 임시 비활성화
       .eq('unit', unit)
 
     // 차시가 있는 경우 차시까지 포함해서 중복 체크
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
         subject,
         grade,
         semester,
-        school_year: school_year || new Date().getFullYear().toString(),
+        // school_year: school_year || new Date().getFullYear().toString(), // 임시 비활성화
         unit,
         lesson,
         achievement_standards: achievement_standards || [],
