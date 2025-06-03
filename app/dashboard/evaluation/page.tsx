@@ -11,6 +11,7 @@ import { SmartPasteModal } from '@/components/evaluation/SmartPasteModal'
 import { GenerateSurveyModal } from '@/components/evaluation/GenerateSurveyModal'
 import { ShareEvaluationModal } from '@/components/evaluation/ShareEvaluationModal'
 import { SharedEvaluationBrowser } from '@/components/evaluation/SharedEvaluationBrowser'
+import { SharedEvaluationModal } from '@/components/evaluation/SharedEvaluationModal'
 import { EvaluationPlan } from '@/lib/types/evaluation'
 import { Plus, FileText, Sparkles, Search } from 'lucide-react'
 
@@ -25,6 +26,7 @@ export default function EvaluationPage() {
   const [smartPasteOpen, setSmartPasteOpen] = useState(false)
   const [surveyModalOpen, setSurveyModalOpen] = useState(false)
   const [shareModalOpen, setShareModalOpen] = useState(false)
+  const [sharedEvaluationModalOpen, setSharedEvaluationModalOpen] = useState(false)
   const [selectedEvaluation, setSelectedEvaluation] = useState<EvaluationPlan | null>(null)
 
   useEffect(() => {
@@ -186,8 +188,8 @@ export default function EvaluationPage() {
   const handleSharedEvaluationCopySuccess = () => {
     // 공유된 평가계획을 복사했으므로 내 평가계획 목록을 새로고침
     fetchEvaluations()
-    // 내 평가계획 탭으로 이동
-    setActiveTab('my')
+    // 성공 메시지 표시
+    alert('평가계획이 성공적으로 복사되었습니다! 내 평가계획 목록에서 확인하세요.')
   }
 
   if (authLoading || loading) {
@@ -217,6 +219,14 @@ export default function EvaluationPage() {
         </div>
         {activeTab === 'my' && (
           <div className="flex gap-2">
+            <Button 
+              onClick={() => setSharedEvaluationModalOpen(true)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Search className="h-4 w-4" />
+              공유 평가 찾기
+            </Button>
             <Button 
               onClick={() => setSmartPasteOpen(true)}
               variant="outline"
@@ -344,6 +354,12 @@ export default function EvaluationPage() {
           setShareModalOpen(false)
           setSelectedEvaluation(null)
         }}
+      />
+
+      <SharedEvaluationModal
+        open={sharedEvaluationModalOpen}
+        onOpenChange={setSharedEvaluationModalOpen}
+        onCopySuccess={handleSharedEvaluationCopySuccess}
       />
     </div>
   )
