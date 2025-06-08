@@ -95,9 +95,10 @@ export default function GenerateSimplePage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null)
   
-  // Evaluation plans
+  // Evaluation plans and results
   const [evaluationPlans, setEvaluationPlans] = useState<any[]>([])
   const [selectedEvaluationPlans, setSelectedEvaluationPlans] = useState<any[]>([])
+  const [evaluationResults, setEvaluationResults] = useState<any[]>([])
 
   const fetchClasses = async () => {
     try {
@@ -152,6 +153,28 @@ export default function GenerateSimplePage() {
     }
   }, [selectedStudent, selectedClass])
 
+  const fetchEvaluationResults = useCallback(async (studentName: string, evaluationPlanIds?: string[]) => {
+    if (!selectedClass || !studentName) return
+
+    try {
+      let url = `/api/evaluation-results?classId=${selectedClass.id}&studentName=${encodeURIComponent(studentName)}`
+      if (evaluationPlanIds && evaluationPlanIds.length > 0) {
+        url += `&evaluationPlanIds=${evaluationPlanIds.join(',')}`
+      }
+      
+      const response = await fetch(url)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          setEvaluationResults(data.data || [])
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching evaluation results:', error)
+      setEvaluationResults([])
+    }
+  }, [selectedClass])
+
   useEffect(() => {
     if (user) {
       fetchClasses()
@@ -162,8 +185,15 @@ export default function GenerateSimplePage() {
   useEffect(() => {
     if (selectedStudent && selectedClass) {
       fetchStudentResponses()
+      fetchEvaluationResults(selectedStudent.name)
     }
-  }, [selectedStudent, selectedClass, fetchStudentResponses])
+  }, [selectedStudent, selectedClass, fetchStudentResponses, fetchEvaluationResults])
+
+  useEffect(() => {
+    if (selectedStudent && selectedEvaluationPlans.length > 0) {
+      fetchEvaluationResults(selectedStudent.name, selectedEvaluationPlans.map(p => p.id))
+    }
+  }, [selectedStudent, selectedEvaluationPlans, fetchEvaluationResults])
 
   // API 키 가져오기 함수
   const getApiKey = () => {
@@ -238,6 +268,7 @@ export default function GenerateSimplePage() {
         teacherNotes,
         additionalContext,
         evaluationPlans: selectedEvaluationPlans,
+        evaluationResults: evaluationResults, // 평가 결과 추가
         studentResponse: selectedResponse,
         observationRecords: syntheticObservationRecords,
         useObservationRecords: syntheticObservationRecords.length > 0,

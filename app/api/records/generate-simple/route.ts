@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
       additionalContext = '',
       evaluationResults = [],
       evaluationPlan = null,
+      evaluationPlans = [],
       studentResponse = null,
       observationRecords = [],
       useObservationRecords = false
@@ -61,10 +62,33 @@ export async function POST(request: NextRequest) {
       className,
       evaluationResults,
       evaluationPlan,
+      evaluationPlans,
       studentResponse,
       observationRecords,
       useObservationRecords
     })
+
+    // 디버깅: 받은 데이터 로깅
+    console.log('=== 생기부 생성 요청 데이터 ===')
+    console.log('평가 계획 개수:', evaluationPlans?.length || 0)
+    console.log('학생 자기평가:', studentResponse ? '있음' : '없음')
+    console.log('평가 결과 개수:', evaluationResults?.length || 0)
+    console.log('관찰 기록 개수:', observationRecords?.length || 0)
+    
+    if (evaluationPlans?.length > 0) {
+      console.log('평가 계획 상세:')
+      evaluationPlans.forEach((plan: any, idx: number) => {
+        console.log(`  [${idx + 1}] ${plan.subject} - ${plan.unit}`)
+        console.log(`      성취기준: ${plan.achievement_standards?.join(', ') || '없음'}`)
+        console.log(`      평가기준: ${plan.evaluation_criteria || '없음'}`)
+      })
+    }
+    
+    if (studentResponse) {
+      console.log('학생 자기평가 응답:')
+      console.log('  객관식:', studentResponse.responses?.multipleChoice?.length || 0, '개')
+      console.log('  주관식:', studentResponse.responses?.shortAnswer?.length || 0, '개')
+    }
 
     // Gemini API 호출
     const geminiResponse = await fetch(
@@ -139,18 +163,23 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function createSimplePrompt({ recordType, subject, teacherNotes, additionalContext, className, evaluationResults, evaluationPlan, studentResponse, observationRecords, useObservationRecords }: any) {
-  // 평가 계획 정보
+function createSimplePrompt({ recordType, subject, teacherNotes, additionalContext, className, evaluationResults, evaluationPlan, evaluationPlans, studentResponse, observationRecords, useObservationRecords }: any) {
+  // 평가 계획 정보 (단일 또는 복수)
   let evaluationPlanInfo = ''
-  if (evaluationPlan) {
+  const plansList = evaluationPlans && evaluationPlans.length > 0 ? evaluationPlans : (evaluationPlan ? [evaluationPlan] : [])
+  
+  if (plansList.length > 0) {
     evaluationPlanInfo = `
 **평가 계획 정보:**
-- 과목: ${evaluationPlan.subject || ''}
-- 학년: ${evaluationPlan.grade || ''}
-- 단원: ${evaluationPlan.unit || ''}
-- 학습목표: ${evaluationPlan.learning_objectives?.join(', ') || ''}
-- 성취기준: ${evaluationPlan.achievement_standards?.join(', ') || ''}
-- 평가기준: ${evaluationPlan.evaluation_criteria || ''}
+${plansList.map((plan: any, idx: number) => `
+[평가계획 ${idx + 1}]
+- 과목: ${plan.subject || ''}
+- 학년: ${plan.grade || ''}
+- 단원: ${plan.unit || ''}
+- 학습목표: ${plan.learning_objectives?.join(', ') || ''}
+- 성취기준: ${plan.achievement_standards?.join(', ') || ''}
+- 평가기준: ${plan.evaluation_criteria || ''}
+`).join('\n')}
 `
   }
 
@@ -276,7 +305,7 @@ ${observationRecords.map((session: any, sessionIdx: number) => {
 `
   }
 
-  const hasEvaluationData = evaluationResults?.length > 0 || evaluationPlan || studentResponse || observationData
+  const hasEvaluationData = evaluationResults?.length > 0 || plansList?.length > 0 || studentResponse || observationData
 
   const basePrompt = `초등학교 생활기록부 "${recordType}" 항목을 작성해주세요.
 
@@ -286,7 +315,9 @@ ${observationRecords.map((session: any, sessionIdx: number) => {
 3. 500자 이내로 작성하세요
 4. '뛰어난', '탁월한', '우수한', '최고의', '완벽한', '훌륭한' 등의 과도한 표현을 피하세요
 5. 구체적이고 객관적인 관찰 내용을 포함하세요
-${hasEvaluationData ? '6. 평가 계획, 평가 결과, 학생 자기평가를 종합적으로 참고하여 학생의 성취 수준을 정확히 반영하세요' : ''}
+${hasEvaluationData ? '6. 평가 계획의 성취기준과 평가기준을 반드시 참고하여 해당 기준에 맞는 성취 수준을 정확히 반영하세요' : ''}
+${plansList?.length > 0 ? '7. 제시된 학습목표와 성취기준이 학생의 실제 성취와 어떻게 연결되는지 구체적으로 서술하세요' : ''}
+${studentResponse ? '8. 학생 자기평가 내용을 교사 관찰과 연결하여 균형있게 반영하세요' : ''}
 
 **기본 정보:**
 - 작성 항목: ${recordType}
