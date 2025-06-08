@@ -520,7 +520,7 @@ export default function GenerateSimplePage() {
                   <KeywordCheckboxSystem
                     studentName={selectedStudent.name}
                     onObservationChange={handleKeywordObservationChange}
-                    initialData={keywordObservation}
+                    initialData={keywordObservation || undefined}
                   />
                 </CardContent>
               )}
