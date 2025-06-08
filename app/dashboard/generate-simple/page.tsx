@@ -30,7 +30,7 @@ interface Student {
 
 interface ClassInfo {
   id: string
-  name: string
+  class_name: string
   school_code: string
   students: Student[]
 }
@@ -103,13 +103,19 @@ export default function GenerateSimplePage() {
     try {
       const response = await fetch('/api/classes')
       if (response.ok) {
-        const data = await response.json()
-        if (data.success) {
-          setClasses(data.data)
-        }
+        const result = await response.json()
+        console.log('학급 조회 응답:', result)
+        // API 응답 구조에 맞게 수정
+        setClasses(result.data || result.classes || [])
+      } else {
+        console.error('학급 조회 실패:', response.status)
+        const errorData = await response.json()
+        console.error('오류 상세:', errorData)
+        alert('학급 목록을 불러올 수 없습니다: ' + (errorData.error || '알 수 없는 오류'))
       }
     } catch (error) {
-      console.error('Error fetching classes:', error)
+      console.error('학급 조회 오류:', error)
+      alert('학급 목록 조회 중 오류가 발생했습니다.')
     }
   }
 
@@ -203,7 +209,7 @@ export default function GenerateSimplePage() {
 
       const requestData = {
         studentName: selectedStudent.name,
-        className: selectedClass.name,
+        className: selectedClass.class_name,
         recordType,
         subject: recordType === '교과학습발달상황' ? 
           (selectedEvaluationPlans.length > 0 ? selectedEvaluationPlans.map(p => p.subject).join(', ') : 
@@ -308,7 +314,7 @@ export default function GenerateSimplePage() {
                   <option value="">학급을 선택하세요</option>
                   {classes.map((classInfo) => (
                     <option key={classInfo.id} value={classInfo.id}>
-                      {classInfo.name}
+                      {classInfo.class_name}
                     </option>
                   ))}
                 </select>
