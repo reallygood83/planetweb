@@ -35,11 +35,19 @@ export default function ObservationRecordsPage() {
     try {
       const response = await fetch('/api/classes');
       if (response.ok) {
-        const data = await response.json();
-        setClasses(data.classes || []);
+        const result = await response.json();
+        console.log('학급 조회 응답:', result);
+        // API 응답 구조에 맞게 수정
+        setClasses(result.data || result.classes || []);
+      } else {
+        console.error('학급 조회 실패:', response.status);
+        const errorData = await response.json();
+        console.error('오류 상세:', errorData);
+        alert('학급 목록을 불러올 수 없습니다: ' + (errorData.error || '알 수 없는 오류'));
       }
     } catch (error) {
       console.error('학급 조회 오류:', error);
+      alert('학급 목록 조회 중 오류가 발생했습니다.');
     }
   };
 

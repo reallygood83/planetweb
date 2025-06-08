@@ -99,6 +99,11 @@ export default function GenerateRecordPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null)
   
+  // 관찰 기록 관련 상태
+  const [observationRecords, setObservationRecords] = useState<any[]>([])
+  const [hasObservationRecords, setHasObservationRecords] = useState(false)
+  const [useObservationRecords, setUseObservationRecords] = useState(true)
+  
   // Loading states
   const [isLoadingResponses, setIsLoadingResponses] = useState(false)
 
@@ -174,6 +179,31 @@ export default function GenerateRecordPage() {
     }
   }, [selectedStudent, selectedClass])
 
+  // 관찰 기록 조회 함수
+  const fetchObservationRecords = useCallback(async () => {
+    if (!selectedStudent || !selectedClass) return
+
+    try {
+      const response = await fetch(
+        `/api/observations/save-session?class_id=${selectedClass.id}&student_name=${selectedStudent.name}&limit=30`
+      )
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.sessions) {
+          setObservationRecords(data.sessions)
+          setHasObservationRecords(data.sessions.length > 0)
+        } else {
+          setObservationRecords([])
+          setHasObservationRecords(false)
+        }
+      }
+    } catch (error) {
+      console.error('관찰 기록 조회 오류:', error)
+      setObservationRecords([])
+      setHasObservationRecords(false)
+    }
+  }, [selectedStudent, selectedClass])
+
   useEffect(() => {
     if (user) {
       fetchClasses()
@@ -185,8 +215,9 @@ export default function GenerateRecordPage() {
     if (selectedStudent && selectedClass) {
       fetchStudentResponses()
       fetchEvaluationResults(selectedStudent.name)
+      fetchObservationRecords()
     }
-  }, [selectedStudent, selectedClass, fetchStudentResponses, fetchEvaluationResults])
+  }, [selectedStudent, selectedClass, fetchStudentResponses, fetchEvaluationResults, fetchObservationRecords])
 
   useEffect(() => {
     if (selectedStudent && selectedEvaluationPlans.length > 0) {
@@ -195,8 +226,13 @@ export default function GenerateRecordPage() {
   }, [selectedStudent, selectedEvaluationPlans, fetchEvaluationResults])
 
   const handleGenerateContent = async () => {
-    if (!selectedStudent || !selectedClass || !teacherNotes.trim()) {
-      alert('필수 정보를 모두 입력해주세요.')
+    // 관찰 기록이 있고 사용하는 경우, teacherNotes는 선택사항
+    const isTeacherNotesRequired = !(hasObservationRecords && useObservationRecords)
+    
+    if (!selectedStudent || !selectedClass || (isTeacherNotesRequired && !teacherNotes.trim())) {
+      alert(isTeacherNotesRequired 
+        ? '필수 정보를 모두 입력해주세요.' 
+        : '학생과 학급을 선택해주세요.')
       return
     }
 
@@ -228,11 +264,15 @@ export default function GenerateRecordPage() {
         // 평가 결과 정보 추가
         evaluationResults: evaluationResults,
         // 학생 자기평가 정보
-        studentResponse: selectedResponse
+        studentResponse: selectedResponse,
+        // 관찰 기록 정보 추가
+        observationRecords: useObservationRecords ? observationRecords : [],
+        useObservationRecords
       }
       
       console.log('Generating record with data:', requestData)
 
+      // 모든 경우에 generate-simple API 사용 (관찰 기록 지원 추가됨)
       const response = await fetch('/api/records/generate-simple', {
         method: 'POST',
         headers: {
@@ -563,24 +603,77 @@ export default function GenerateRecordPage() {
                 </div>
               )}
 
+              {/* Observation Records Section */}
+              {hasObservationRecords && (
+                <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      <h4 className="font-medium text-blue-900">키워드 기반 관찰 기록 발견!</h4>
+                    </div>
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                      {observationRecords.length}개 세션
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <p className="text-sm text-blue-700">
+                      "{selectedStudent?.name}" 학생에 대한 체크박스 기반 관찰 기록이 있습니다. 
+                      이 데이터를 생기부 작성에 활용하시겠습니까?
+                    </p>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="useObservationRecords"
+                        checked={useObservationRecords}
+                        onCheckedChange={(checked) => setUseObservationRecords(checked as boolean)}
+                      />
+                      <Label htmlFor="useObservationRecords" className="text-sm font-medium cursor-pointer">
+                        관찰 기록 데이터를 생기부 작성에 포함
+                      </Label>
+                    </div>
+                    
+                    {useObservationRecords && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-blue-600 font-medium">포함될 관찰 기록:</p>
+                        <div className="space-y-1">
+                          {observationRecords.slice(0, 3).map((session: any, idx: number) => (
+                            <div key={idx} className="text-xs text-blue-600 pl-2 border-l-2 border-blue-300">
+                              • {session.session_date} - {session.subject || '전과목'} ({session.lesson_topic || '수업 관찰'})
+                            </div>
+                          ))}
+                          {observationRecords.length > 3 && (
+                            <div className="text-xs text-blue-500 pl-2">
+                              ... 외 {observationRecords.length - 3}개 더
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Teacher Notes */}
               <div className="space-y-2">
-                <Label htmlFor="teacherNotes">교사 관찰 기록 *</Label>
+                <Label htmlFor="teacherNotes">
+                  교사 관찰 기록 {hasObservationRecords && useObservationRecords ? '(추가)' : '*'}
+                </Label>
                 <Textarea
                   id="teacherNotes"
-                  placeholder="학생의 구체적인 학습 활동, 행동 관찰 내용, 성취 수준 등을 입력하세요...
-
-예시:
-- 수학 시간에 분수 덧셈 문제를 스스로 해결하려고 노력함
-- 모둠 활동 시 친구들의 의견을 경청하고 자신의 생각을 논리적으로 표현함
-- 어려운 문제를 만나도 포기하지 않고 끝까지 시도하는 끈기를 보임"
+                  placeholder={hasObservationRecords && useObservationRecords 
+                    ? "키워드 기반 관찰 기록 외에 추가로 기록하고 싶은 관찰 내용이 있다면 입력하세요...\n\n예시:\n- 최근 수학에 대한 관심이 높아져 추가 문제를 요청함\n- 발표할 때 자신감이 크게 향상됨" 
+                    : "학생의 구체적인 학습 활동, 행동 관찰 내용, 성취 수준 등을 입력하세요...\n\n예시:\n- 수학 시간에 분수 덧셈 문제를 스스로 해결하려고 노력함\n- 모둠 활동 시 친구들의 의견을 경청하고 자신의 생각을 논리적으로 표현함\n- 어려운 문제를 만나도 포기하지 않고 끝까지 시도하는 끈기를 보임"}
                   value={teacherNotes}
                   onChange={(e) => setTeacherNotes(e.target.value)}
                   rows={8}
                   className="resize-none"
                 />
                 <p className="text-xs text-gray-500">
-                  * 구체적이고 객관적인 관찰 내용을 입력하면 더 정확한 생기부가 생성됩니다.
+                  {hasObservationRecords && useObservationRecords 
+                    ? "키워드 기반 관찰 기록이 자동으로 포함됩니다. 추가 관찰 내용이 있으면 입력하세요."
+                    : "* 구체적이고 객관적인 관찰 내용을 입력하면 더 정확한 생기부가 생성됩니다."
+                  }
                 </p>
               </div>
 

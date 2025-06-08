@@ -20,7 +20,9 @@ export async function POST(request: NextRequest) {
       additionalContext = '',
       evaluationResults = [],
       evaluationPlan = null,
-      studentResponse = null
+      studentResponse = null,
+      observationRecords = [],
+      useObservationRecords = false
     } = body
 
     // 필수 항목 검증
@@ -56,7 +58,9 @@ export async function POST(request: NextRequest) {
       className,
       evaluationResults,
       evaluationPlan,
-      studentResponse
+      studentResponse,
+      observationRecords,
+      useObservationRecords
     })
 
     // Gemini API 호출
@@ -132,7 +136,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function createSimplePrompt({ recordType, subject, teacherNotes, additionalContext, className, evaluationResults, evaluationPlan, studentResponse }: any) {
+function createSimplePrompt({ recordType, subject, teacherNotes, additionalContext, className, evaluationResults, evaluationPlan, studentResponse, observationRecords, useObservationRecords }: any) {
   // 평가 계획 정보
   let evaluationPlanInfo = ''
   if (evaluationPlan) {
@@ -217,7 +221,59 @@ ${responses.shortAnswer.map((sa: any, idx: number) =>
     }
   }
 
-  const hasEvaluationData = evaluationResults?.length > 0 || evaluationPlan || studentResponse
+  // 관찰 기록 정보
+  let observationData = ''
+  if (useObservationRecords && observationRecords && observationRecords.length > 0) {
+    observationData = `
+**키워드 기반 관찰 기록:**
+${observationRecords.map((session: any, sessionIdx: number) => {
+  const sessionInfo = `
+[관찰 세션 ${sessionIdx + 1}] ${session.session_date || '날짜 미기록'}
+- 교과: ${session.subject || '전과목'}
+- 수업 주제: ${session.lesson_topic || '미기록'}
+- 관찰 내용:`
+
+  if (session.students_data && session.students_data.length > 0) {
+    const studentData = session.students_data.find((s: any) => s.student_name === session.student_name || s.student_name)
+    if (studentData && studentData.selected_keywords && studentData.selected_keywords.length > 0) {
+      const keywordsByCategory = studentData.selected_keywords.reduce((acc: any, keyword: any) => {
+        if (!acc[keyword.category_id]) acc[keyword.category_id] = []
+        acc[keyword.category_id].push(keyword)
+        return acc
+      }, {})
+
+      const categoryNames: any = {
+        'learning_attitude': '학습태도',
+        'social_skills': '대인관계',
+        'cognitive_abilities': '학습능력',
+        'participation_level': '참여도',
+        'character_traits': '성격특성',
+        'special_talents': '특기사항'
+      }
+
+      const categorySummary = Object.entries(keywordsByCategory).map(([catId, keywords]: [string, any]) => {
+        const categoryName = categoryNames[catId] || catId
+        const keywordList = keywords.map((k: any) => {
+          const intensity = k.intensity === 1 ? '약간' : k.intensity === 3 ? '매우' : '보통'
+          return `${intensity} ${k.keyword_id.replace(/_/g, ' ')}`
+        }).join(', ')
+        return `  • ${categoryName}: ${keywordList}`
+      }).join('\n')
+
+      return sessionInfo + '\n' + categorySummary + (studentData.additional_notes ? `\n  • 추가 관찰: ${studentData.additional_notes}` : '')
+    }
+  }
+  return sessionInfo + '\n  • 기록된 관찰 내용 없음'
+}).join('\n\n')}
+
+**관찰 기록 요약:**
+- 총 ${observationRecords.length}회의 관찰 세션 기록
+- 체크박스 기반 키워드 선택으로 수집된 객관적 관찰 데이터
+- 교사의 일상적 관찰을 통해 학생의 학습 태도와 성장 과정을 체계적으로 기록
+`
+  }
+
+  const hasEvaluationData = evaluationResults?.length > 0 || evaluationPlan || studentResponse || observationData
 
   const basePrompt = `초등학교 생활기록부 "${recordType}" 항목을 작성해주세요.
 
@@ -242,6 +298,8 @@ ${studentSelfEvaluation}
 
 **교사 관찰 기록:**
 ${teacherNotes}
+
+${observationData}
 
 ${additionalContext ? `**추가 맥락:**\n${additionalContext}` : ''}
 
