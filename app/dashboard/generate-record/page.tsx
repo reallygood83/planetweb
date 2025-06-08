@@ -35,7 +35,7 @@ interface Student {
 
 interface ClassInfo {
   id: string
-  name: string
+  class_name: string
   school_code: string
   students: Student[]
 }
@@ -385,7 +385,7 @@ export default function GenerateRecordPage() {
           content: generatedContent.content,
           metadata: {
             studentName: selectedStudent.name,
-            className: selectedClass.name,
+            className: selectedClass.class_name,
             subject: selectedResponse?.survey.evaluation_plans?.subject,
             unit: selectedResponse?.survey.evaluation_plans?.unit,
             teacherNotes,
@@ -484,7 +484,7 @@ export default function GenerateRecordPage() {
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="font-medium">{classInfo.name}</div>
+                        <div className="font-medium">{classInfo.class_name}</div>
                         <div className="text-sm text-gray-500">
                           학생 수: {classInfo.students?.length || 0}명
                         </div>
@@ -506,7 +506,7 @@ export default function GenerateRecordPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
-                2단계: 학생 선택 - {selectedClass?.name}
+                2단계: 학생 선택 - {selectedClass?.class_name}
               </CardTitle>
               <CardDescription>
                 생기부를 작성할 학생을 선택하세요.
