@@ -24,6 +24,18 @@ export default function DashboardLayout({
     }
   }, [user, loading, router])
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setActiveDropdown(null)
+    }
+
+    if (activeDropdown) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [activeDropdown])
+
   const handleSignOut = async () => {
     await signOut()
   }
@@ -80,20 +92,23 @@ export default function DashboardLayout({
       {/* Navigation */}
       <nav className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
               <div className="flex-shrink-0 flex items-center">
-                <Link href="/dashboard" className="text-xl font-bold text-gray-900">
-                  Planet
+                <Link href="/dashboard" className="flex items-center space-x-2 text-xl font-bold text-gray-900">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <span className="text-white text-sm font-bold">P</span>
+                  </div>
+                  <span>Planet</span>
                 </Link>
               </div>
-              <div className="hidden md:ml-6 md:flex md:space-x-6">
+              <div className="hidden md:ml-8 md:flex md:space-x-8">
                 {navigation.map((item) => (
                   <div key={item.name} className="relative">
                     {item.href ? (
                       <Link
                         href={item.href}
-                        className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                        className={`inline-flex items-center px-1 py-4 border-b-2 text-sm font-medium h-16 ${
                           pathname === item.href
                             ? 'border-blue-500 text-gray-900'
                             : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
@@ -104,8 +119,11 @@ export default function DashboardLayout({
                     ) : (
                       <div>
                         <button
-                          onClick={() => setActiveDropdown(activeDropdown === item.name ? null : item.name)}
-                          className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setActiveDropdown(activeDropdown === item.name ? null : item.name)
+                          }}
+                          className={`inline-flex items-center px-1 py-4 border-b-2 text-sm font-medium h-16 ${
                             item.items?.some(subItem => pathname === subItem.href)
                               ? 'border-blue-500 text-gray-900'
                               : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
@@ -115,7 +133,10 @@ export default function DashboardLayout({
                           <ChevronDown className="ml-1 h-4 w-4" />
                         </button>
                         {activeDropdown === item.name && item.items && (
-                          <div className="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                          <div 
+                            className="absolute left-0 top-full mt-1 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <div className="py-1">
                               {item.items.map((subItem) => (
                                 <Link
