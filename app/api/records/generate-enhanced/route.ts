@@ -205,7 +205,7 @@ function formatObservationData(observations: any[]): string {
 
   const sections = Object.entries(groupedByCategory).map(([categoryId, categoryObs]) => {
     const categoryName = getCategoryName(categoryId);
-    const keywords = categoryObs.map(obs => {
+    const keywords = (categoryObs as any[]).map(obs => {
       const intensityText = ['약간', '보통', '매우'][obs.intensity - 1] || '보통';
       const contextText = obs.context ? ` (${obs.context})` : '';
       return `${intensityText} ${getKeywordText(obs.keyword_id)}${contextText}`;

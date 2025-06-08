@@ -145,15 +145,15 @@ export default function IntegratedRecordWorkflow({
     } finally {
       setIsLoading(false);
     }
-  }, [evaluationPlanId, studentName]);
+  }, [evaluationPlanId, studentName, updateCurrentStep, updateStepStatus]);
 
-  const updateStepStatus = (stepId: string, status: WorkflowStep['status']) => {
+  const updateStepStatus = useCallback((stepId: string, status: WorkflowStep['status']) => {
     setWorkflowSteps(prev => prev.map(step =>
       step.id === stepId ? { ...step, status } : step
     ));
-  };
+  }, []);
 
-  const updateCurrentStep = () => {
+  const updateCurrentStep = useCallback(() => {
     const firstPendingRequired = workflowSteps.findIndex(
       step => step.status === 'pending' && step.required
     );
@@ -162,7 +162,7 @@ export default function IntegratedRecordWorkflow({
       setCurrentStep(firstPendingRequired);
       updateStepStatus(workflowSteps[firstPendingRequired].id, 'current');
     }
-  };
+  }, [workflowSteps, updateStepStatus]);
 
   const handleStepAction = async (step: WorkflowStep) => {
     switch (step.id) {
