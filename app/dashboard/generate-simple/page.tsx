@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
@@ -129,7 +128,7 @@ export default function GenerateSimplePage() {
     }
   }
 
-  const fetchStudentResponses = async () => {
+  const fetchStudentResponses = useCallback(async () => {
     if (!selectedStudent || !selectedClass) return
 
     try {
@@ -145,7 +144,7 @@ export default function GenerateSimplePage() {
     } catch (error) {
       console.error('Error fetching student responses:', error)
     }
-  }
+  }, [selectedStudent, selectedClass])
 
   useEffect(() => {
     if (user) {
@@ -158,7 +157,7 @@ export default function GenerateSimplePage() {
     if (selectedStudent && selectedClass) {
       fetchStudentResponses()
     }
-  }, [selectedStudent, selectedClass])
+  }, [selectedStudent, selectedClass, fetchStudentResponses])
 
   const handleGenerateContent = async () => {
     // Basic validation
