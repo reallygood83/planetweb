@@ -25,11 +25,14 @@ export async function POST(request: NextRequest) {
       useObservationRecords = false
     } = body
 
-    // 필수 항목 검증
-    if (!teacherNotes.trim()) {
+    // 관찰 데이터 검증 - 교사 메모 또는 관찰 기록 중 하나는 있어야 함
+    const hasTeacherNotes = teacherNotes && teacherNotes.trim() !== ''
+    const hasObservationData = useObservationRecords && observationRecords && observationRecords.length > 0
+    
+    if (!hasTeacherNotes && !hasObservationData) {
       return NextResponse.json({ 
         success: false, 
-        error: '교사 관찰 기록을 입력해주세요.' 
+        error: '교사 관찰 기록을 입력하거나 관찰 기록을 선택해주세요.' 
       }, { status: 400 })
     }
 

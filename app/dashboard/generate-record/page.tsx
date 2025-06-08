@@ -256,6 +256,20 @@ export default function GenerateRecordPage() {
     setRealtimeKeywordObservation(observation)
   }
 
+  // API 키 가져오기 함수
+  const getApiKey = () => {
+    try {
+      const encryptedKey = localStorage.getItem('gemini_api_key')
+      if (encryptedKey) {
+        // 암호화된 키가 있다면 복호화 (실제 구현에서는 crypto-js 사용)
+        return encryptedKey // 임시로 그대로 반환
+      }
+    } catch (error) {
+      console.error('API 키 조회 오류:', error)
+    }
+    return null
+  }
+
   const handleGenerateContent = async () => {
     // 기본 검증
     if (!selectedStudent || !selectedClass) {
@@ -285,12 +299,19 @@ export default function GenerateRecordPage() {
       }
     }
 
+    // API 키 확인
+    const apiKey = getApiKey()
+    if (!apiKey) {
+      alert('AI 생성을 위해 먼저 설정에서 Gemini API 키를 등록해주세요.')
+      return
+    }
+
     setIsGenerating(true)
     try {
       // 생기부 생성에 필요한 모든 데이터 수집
       const requestData = {
         studentName: selectedStudent.name,
-        className: selectedClass.name,
+        className: selectedClass.class_name,
         recordType,
         subject: recordType === '교과학습발달상황' ? 
           (selectedEvaluationPlans.length > 0 ? selectedEvaluationPlans.map(p => p.subject).join(', ') : 
@@ -305,7 +326,8 @@ export default function GenerateRecordPage() {
         studentResponse: selectedResponse,
         // 관찰 기록 정보 추가 (기존 DB 관찰 기록 + 실시간 키워드)
         observationRecords: useObservationRecords ? [...observationRecords, ...createSyntheticObservationRecords()] : createSyntheticObservationRecords(),
-        useObservationRecords: useObservationRecords || (realtimeKeywordObservation && realtimeKeywordObservation.selected_keywords.length > 0)
+        useObservationRecords: useObservationRecords || (realtimeKeywordObservation && realtimeKeywordObservation.selected_keywords.length > 0),
+        apiKey // API 키 추가
       }
       
       console.log('Generating record with data:', requestData)
@@ -320,6 +342,12 @@ export default function GenerateRecordPage() {
       })
 
       const data = await response.json()
+      
+      if (!response.ok) {
+        console.error('API 응답 오류:', response.status, data)
+        alert('생기부 생성에 실패했습니다: ' + (data.error || `서버 오류 (${response.status})`))
+        return
+      }
 
       if (data.success) {
         setGeneratedContent({
@@ -331,6 +359,7 @@ export default function GenerateRecordPage() {
         })
         setCurrentStep(5) // Move to final step
       } else {
+        console.error('생기부 생성 실패:', data)
         alert('생기부 생성에 실패했습니다: ' + (data.error || '알 수 없는 오류'))
       }
     } catch (error) {

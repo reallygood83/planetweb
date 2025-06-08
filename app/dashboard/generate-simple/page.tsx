@@ -165,6 +165,20 @@ export default function GenerateSimplePage() {
     }
   }, [selectedStudent, selectedClass, fetchStudentResponses])
 
+  // API 키 가져오기 함수
+  const getApiKey = () => {
+    try {
+      const encryptedKey = localStorage.getItem('gemini_api_key')
+      if (encryptedKey) {
+        // 암호화된 키가 있다면 복호화 (실제 구현에서는 crypto-js 사용)
+        return encryptedKey // 임시로 그대로 반환
+      }
+    } catch (error) {
+      console.error('API 키 조회 오류:', error)
+    }
+    return null
+  }
+
   const handleGenerateContent = async () => {
     // Basic validation
     if (!selectedStudent || !selectedClass) {
@@ -190,6 +204,13 @@ export default function GenerateSimplePage() {
         alert('교과학습발달상황 작성을 위해 평가 계획을 선택하거나 과목을 선택해주세요.')
         return
       }
+    }
+
+    // API 키 확인
+    const apiKey = getApiKey()
+    if (!apiKey) {
+      alert('AI 생성을 위해 먼저 설정에서 Gemini API 키를 등록해주세요.')
+      return
     }
 
     setIsGenerating(true)
@@ -219,7 +240,8 @@ export default function GenerateSimplePage() {
         evaluationPlans: selectedEvaluationPlans,
         studentResponse: selectedResponse,
         observationRecords: syntheticObservationRecords,
-        useObservationRecords: syntheticObservationRecords.length > 0
+        useObservationRecords: syntheticObservationRecords.length > 0,
+        apiKey // API 키 추가
       }
       
       console.log('Generating record with data:', requestData)
@@ -233,6 +255,12 @@ export default function GenerateSimplePage() {
       })
 
       const data = await response.json()
+      
+      if (!response.ok) {
+        console.error('API 응답 오류:', response.status, data)
+        alert('생기부 생성에 실패했습니다: ' + (data.error || `서버 오류 (${response.status})`))
+        return
+      }
 
       if (data.success) {
         setGeneratedContent({
@@ -243,6 +271,7 @@ export default function GenerateSimplePage() {
           errors: data.validation?.issues?.filter((issue: string) => issue.includes('초과')) || []
         })
       } else {
+        console.error('생기부 생성 실패:', data)
         alert('생기부 생성에 실패했습니다: ' + (data.error || '알 수 없는 오류'))
       }
     } catch (error) {
