@@ -99,7 +99,7 @@ export function createEvaluationContext(evaluationPlan: any) {
     standardWeights: calculateStandardWeights(evaluationPlan.achievement_standards),
     
     // 평가 영역별 중요도
-    areaImportance: categorizeEvaluationAreas(evaluationPlan.evaluation_criteria)
+    areaImportance: categorizeEvaluationAreas()
   };
 }
 
