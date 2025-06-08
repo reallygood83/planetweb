@@ -618,7 +618,7 @@ export default function GenerateRecordPage() {
                   
                   <div className="space-y-3">
                     <p className="text-sm text-blue-700">
-                      "{selectedStudent?.name}" 학생에 대한 체크박스 기반 관찰 기록이 있습니다. 
+                      &ldquo;{selectedStudent?.name}&rdquo; 학생에 대한 체크박스 기반 관찰 기록이 있습니다. 
                       이 데이터를 생기부 작성에 활용하시겠습니까?
                     </p>
                     
