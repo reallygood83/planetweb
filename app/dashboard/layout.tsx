@@ -49,6 +49,8 @@ export default function DashboardLayout({
       items: [
         { name: '평가계획', href: '/dashboard/evaluation' },
         { name: '평가결과입력', href: '/dashboard/evaluation-results' },
+        { name: '교사평가(성취수준)', href: '/dashboard/teacher-evaluation' },
+        { name: '관찰기록', href: '/dashboard/observation-records' },
         { name: '학급관리', href: '/dashboard/class' },
         { name: '학교코드', href: '/dashboard/school-code' },
       ]
