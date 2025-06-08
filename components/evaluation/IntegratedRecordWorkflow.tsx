@@ -84,10 +84,22 @@ export default function IntegratedRecordWorkflow({
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
 
-  // 초기 데이터 로드
-  useEffect(() => {
-    checkDataAvailability();
-  }, [studentName, evaluationPlanId, checkDataAvailability]);
+  const updateStepStatus = useCallback((stepId: string, status: WorkflowStep['status']) => {
+    setWorkflowSteps(prev => prev.map(step =>
+      step.id === stepId ? { ...step, status } : step
+    ));
+  }, []);
+
+  const updateCurrentStep = useCallback(() => {
+    const firstPendingRequired = workflowSteps.findIndex(
+      step => step.status === 'pending' && step.required
+    );
+    
+    if (firstPendingRequired !== -1) {
+      setCurrentStep(firstPendingRequired);
+      updateStepStatus(workflowSteps[firstPendingRequired].id, 'current');
+    }
+  }, [workflowSteps, updateStepStatus]);
 
   const checkDataAvailability = useCallback(async () => {
     setIsLoading(true);
@@ -147,22 +159,10 @@ export default function IntegratedRecordWorkflow({
     }
   }, [evaluationPlanId, studentName, updateCurrentStep, updateStepStatus]);
 
-  const updateStepStatus = useCallback((stepId: string, status: WorkflowStep['status']) => {
-    setWorkflowSteps(prev => prev.map(step =>
-      step.id === stepId ? { ...step, status } : step
-    ));
-  }, []);
-
-  const updateCurrentStep = useCallback(() => {
-    const firstPendingRequired = workflowSteps.findIndex(
-      step => step.status === 'pending' && step.required
-    );
-    
-    if (firstPendingRequired !== -1) {
-      setCurrentStep(firstPendingRequired);
-      updateStepStatus(workflowSteps[firstPendingRequired].id, 'current');
-    }
-  }, [workflowSteps, updateStepStatus]);
+  // 초기 데이터 로드
+  useEffect(() => {
+    checkDataAvailability();
+  }, [checkDataAvailability]);
 
   const handleStepAction = async (step: WorkflowStep) => {
     switch (step.id) {
