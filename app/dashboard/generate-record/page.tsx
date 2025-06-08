@@ -17,12 +17,16 @@ import {
   Check,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
+  ChevronUp,
   AlertCircle,
   Copy,
   Download,
   RefreshCw
 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
+import KeywordCheckboxSystem from '@/components/observation/KeywordCheckboxSystem'
+import { StudentObservation } from '@/lib/types/observation-system'
 
 interface Student {
   number: number
@@ -103,6 +107,10 @@ export default function GenerateRecordPage() {
   const [observationRecords, setObservationRecords] = useState<any[]>([])
   const [hasObservationRecords, setHasObservationRecords] = useState(false)
   const [useObservationRecords, setUseObservationRecords] = useState(true)
+  
+  // 실시간 키워드 선택 (메모리에서만 사용, DB 저장 안함)
+  const [showRealtimeKeywords, setShowRealtimeKeywords] = useState(false)
+  const [realtimeKeywordObservation, setRealtimeKeywordObservation] = useState<StudentObservation | null>(null)
   
   // Loading states
   const [isLoadingResponses, setIsLoadingResponses] = useState(false)
@@ -225,14 +233,44 @@ export default function GenerateRecordPage() {
     }
   }, [selectedStudent, selectedEvaluationPlans, fetchEvaluationResults])
 
+  // 실시간 키워드를 관찰 기록 형태로 변환
+  const createSyntheticObservationRecords = () => {
+    if (!realtimeKeywordObservation || realtimeKeywordObservation.selected_keywords.length === 0) {
+      return []
+    }
+
+    return [{
+      session_date: new Date().toISOString().split('T')[0],
+      subject: selectedSubject || selectedEvaluationPlans.map(p => p.subject).join(', ') || '전과목',
+      lesson_topic: '실시간 관찰',
+      student_name: selectedStudent?.name || '',
+      students_data: [{
+        student_name: selectedStudent?.name || '',
+        selected_keywords: realtimeKeywordObservation.selected_keywords,
+        additional_notes: realtimeKeywordObservation.additional_notes
+      }]
+    }]
+  }
+
+  const handleRealtimeKeywordObservationChange = (observation: StudentObservation) => {
+    setRealtimeKeywordObservation(observation)
+  }
+
   const handleGenerateContent = async () => {
-    // 관찰 기록이 있고 사용하는 경우, teacherNotes는 선택사항
-    const isTeacherNotesRequired = !(hasObservationRecords && useObservationRecords)
+    // 기본 검증
+    if (!selectedStudent || !selectedClass) {
+      alert('학생과 학급을 선택해주세요.')
+      return
+    }
+
+    // 관찰 데이터 확인 (기존 DB 관찰 기록 또는 실시간 키워드)
+    const hasTeacherNotes = teacherNotes.trim() !== ''
+    const hasRealtimeKeywords = realtimeKeywordObservation && realtimeKeywordObservation.selected_keywords.length > 0
+    const hasObservationData = (hasObservationRecords && useObservationRecords) || hasRealtimeKeywords
     
-    if (!selectedStudent || !selectedClass || (isTeacherNotesRequired && !teacherNotes.trim())) {
-      alert(isTeacherNotesRequired 
-        ? '필수 정보를 모두 입력해주세요.' 
-        : '학생과 학급을 선택해주세요.')
+    // 교사 관찰 기록 또는 관찰 데이터 중 하나는 있어야 함
+    if (!hasTeacherNotes && !hasObservationData) {
+      alert('교사 관찰 기록을 입력하거나 실시간 키워드를 선택해주세요.')
       return
     }
 
@@ -265,9 +303,9 @@ export default function GenerateRecordPage() {
         evaluationResults: evaluationResults,
         // 학생 자기평가 정보
         studentResponse: selectedResponse,
-        // 관찰 기록 정보 추가
-        observationRecords: useObservationRecords ? observationRecords : [],
-        useObservationRecords
+        // 관찰 기록 정보 추가 (기존 DB 관찰 기록 + 실시간 키워드)
+        observationRecords: useObservationRecords ? [...observationRecords, ...createSyntheticObservationRecords()] : createSyntheticObservationRecords(),
+        useObservationRecords: useObservationRecords || (realtimeKeywordObservation && realtimeKeywordObservation.selected_keywords.length > 0)
       }
       
       console.log('Generating record with data:', requestData)
@@ -367,16 +405,21 @@ export default function GenerateRecordPage() {
       case 3: {
         // 3단계: 추가 정보 입력
         const hasTeacherNotes = teacherNotes.trim() !== ''
+        const hasRealtimeKeywords = realtimeKeywordObservation && realtimeKeywordObservation.selected_keywords.length > 0
+        const hasObservationData = (hasObservationRecords && useObservationRecords) || hasRealtimeKeywords
+        
+        // 교사 관찰 기록 또는 실시간 키워드 중 하나는 있어야 함
+        const hasObservationContent = hasTeacherNotes || hasObservationData
         
         // 교과학습발달상황인 경우 평가 계획이나 과목 선택 필요
         if (recordType === '교과학습발달상황') {
           const hasSubject = selectedEvaluationPlans.length > 0 || 
                             selectedResponse?.survey.evaluation_plans?.subject || 
                             selectedSubject
-          return hasTeacherNotes && hasSubject
+          return hasObservationContent && hasSubject
         }
         
-        return hasTeacherNotes
+        return hasObservationContent
       }
       case 4: return true // 자기평가는 선택사항
       case 5: return generatedContent !== null
@@ -648,6 +691,51 @@ export default function GenerateRecordPage() {
                             </div>
                           )}
                         </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Real-time Keyword Selection (Memory Only) */}
+              {selectedStudent && (
+                <div className="space-y-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                      <h4 className="font-medium text-yellow-900">실시간 키워드 관찰 (생성용)</h4>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-yellow-700">저장되지 않음</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowRealtimeKeywords(!showRealtimeKeywords)}
+                      >
+                        {showRealtimeKeywords ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <p className="text-sm text-yellow-700">
+                      생기부 생성을 위한 임시 키워드 선택입니다. 데이터베이스에 저장되지 않으며, 
+                      현재 생성 과정에서만 활용됩니다.
+                    </p>
+                    
+                    {showRealtimeKeywords && (
+                      <div className="bg-white rounded-lg p-4 border">
+                        <KeywordCheckboxSystem
+                          studentName={selectedStudent.name}
+                          onObservationChange={handleRealtimeKeywordObservationChange}
+                          initialData={realtimeKeywordObservation || undefined}
+                        />
+                      </div>
+                    )}
+                    
+                    {realtimeKeywordObservation && realtimeKeywordObservation.selected_keywords.length > 0 && (
+                      <div className="text-xs text-yellow-600">
+                        ✓ {realtimeKeywordObservation.selected_keywords.length}개 키워드 선택됨
                       </div>
                     )}
                   </div>
