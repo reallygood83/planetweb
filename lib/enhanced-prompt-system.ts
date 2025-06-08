@@ -150,7 +150,7 @@ export function createEnhancedRecordPrompt(data: {
   // const evalContext = createEvaluationContext(evaluation);
   
   // 교과별 특화 요소 추출
-  const subjectElements = SUBJECT_SPECIFIC_ELEMENTS[evaluation.subject] || SUBJECT_SPECIFIC_ELEMENTS['국어'];
+  const subjectElements = SUBJECT_SPECIFIC_ELEMENTS[evaluation.subject as keyof typeof SUBJECT_SPECIFIC_ELEMENTS] || SUBJECT_SPECIFIC_ELEMENTS['국어'];
   
   // 성취수준별 서술 전략 선택
   const strategy = ACHIEVEMENT_STRATEGIES[finalAchievementLevel as keyof typeof ACHIEVEMENT_STRATEGIES] || ACHIEVEMENT_STRATEGIES['보통'];
