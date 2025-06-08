@@ -745,20 +745,22 @@ export default function GenerateRecordPage() {
               {/* Teacher Notes */}
               <div className="space-y-2">
                 <Label htmlFor="teacherNotes">
-                  교사 관찰 기록 {hasObservationRecords && useObservationRecords ? '(추가)' : '*'}
+                  교사 관찰 기록 {(hasObservationRecords && useObservationRecords) || (realtimeKeywordObservation && realtimeKeywordObservation.selected_keywords.length > 0) ? '(선택)' : '*'}
                 </Label>
                 <Textarea
                   id="teacherNotes"
-                  placeholder={hasObservationRecords && useObservationRecords 
+                  placeholder={
+                    (hasObservationRecords && useObservationRecords) || (realtimeKeywordObservation && realtimeKeywordObservation.selected_keywords.length > 0)
                     ? "키워드 기반 관찰 기록 외에 추가로 기록하고 싶은 관찰 내용이 있다면 입력하세요...\n\n예시:\n- 최근 수학에 대한 관심이 높아져 추가 문제를 요청함\n- 발표할 때 자신감이 크게 향상됨" 
-                    : "학생의 구체적인 학습 활동, 행동 관찰 내용, 성취 수준 등을 입력하세요...\n\n예시:\n- 수학 시간에 분수 덧셈 문제를 스스로 해결하려고 노력함\n- 모둠 활동 시 친구들의 의견을 경청하고 자신의 생각을 논리적으로 표현함\n- 어려운 문제를 만나도 포기하지 않고 끝까지 시도하는 끈기를 보임"}
+                    : "학생의 구체적인 학습 활동, 행동 관찰 내용, 성취 수준 등을 입력하세요...\n\n예시:\n- 수학 시간에 분수 덧셈 문제를 스스로 해결하려고 노력함\n- 모둠 활동 시 친구들의 의견을 경청하고 자신의 생각을 논리적으로 표현함\n- 어려운 문제를 만나도 포기하지 않고 끝까지 시도하는 끈기를 보임"
+                  }
                   value={teacherNotes}
                   onChange={(e) => setTeacherNotes(e.target.value)}
                   rows={8}
                   className="resize-none"
                 />
                 <p className="text-xs text-gray-500">
-                  {hasObservationRecords && useObservationRecords 
+                  {(hasObservationRecords && useObservationRecords) || (realtimeKeywordObservation && realtimeKeywordObservation.selected_keywords.length > 0)
                     ? "키워드 기반 관찰 기록이 자동으로 포함됩니다. 추가 관찰 내용이 있으면 입력하세요."
                     : "* 구체적이고 객관적인 관찰 내용을 입력하면 더 정확한 생기부가 생성됩니다."
                   }
