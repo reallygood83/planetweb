@@ -51,7 +51,7 @@ export const SUBJECT_SPECIFIC_ELEMENTS = {
 };
 
 // 학생 응답 분석 및 해석 함수
-export function analyzeStudentResponse(responses: any, _evaluationCriteria: any) {
+export function analyzeStudentResponse(responses: any) {
   const analysis = {
     achievementLevel: '',
     learningPattern: '',
@@ -142,7 +142,7 @@ export function createEnhancedRecordPrompt(data: {
     };
   } else {
     // 학생 응답 기반 자동 분석 (폴백)
-    const studentAnalysis = analyzeStudentResponse(responses, evaluation.evaluation_criteria);
+    const studentAnalysis = analyzeStudentResponse(responses);
     finalAchievementLevel = studentAnalysis.achievementLevel;
   }
   
@@ -248,7 +248,7 @@ function analyzeImportance(standard: string): number {
 }
 
 // 평가영역 분류 함수
-function categorizeEvaluationAreas(_criteria: any) {
+function categorizeEvaluationAreas() {
   // 평가기준을 영역별로 분류하고 중요도 부여
   return {
     knowledge: 0.3,    // 지식 이해

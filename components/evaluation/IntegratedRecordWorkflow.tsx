@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -89,7 +89,7 @@ export default function IntegratedRecordWorkflow({
     checkDataAvailability();
   }, [studentName, evaluationPlanId, checkDataAvailability]);
 
-  const checkDataAvailability = async () => {
+  const checkDataAvailability = useCallback(async () => {
     setIsLoading(true);
     
     try {
@@ -145,7 +145,7 @@ export default function IntegratedRecordWorkflow({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [evaluationPlanId, studentName]);
 
   const updateStepStatus = (stepId: string, status: WorkflowStep['status']) => {
     setWorkflowSteps(prev => prev.map(step =>
