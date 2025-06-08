@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/lib/supabase/server';
 import { createEnhancedRecordPrompt, analyzeStudentResponse } from '@/lib/enhanced-prompt-system';
 
 export async function POST(request: NextRequest) {
@@ -20,7 +19,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createServerComponentClient({ cookies });
+    const supabase = await createClient();
 
     // 1. 사용자 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser();

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/lib/supabase/server';
 import { StudentAchievement } from '@/lib/types/teacher-evaluation';
 
 export async function POST(request: NextRequest) {
@@ -26,7 +25,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createServerComponentClient({ cookies });
+    const supabase = await createClient();
 
     // 사용자 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -103,7 +102,7 @@ export async function GET(request: NextRequest) {
     const classId = searchParams.get('class_id');
     const studentName = searchParams.get('student_name');
 
-    const supabase = createServerComponentClient({ cookies });
+    const supabase = await createClient();
 
     // 사용자 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser();

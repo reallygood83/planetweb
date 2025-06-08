@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/lib/supabase/server';
 import { ObservationSession, StudentObservation } from '@/lib/types/observation-system';
 
 export async function POST(request: NextRequest) {
@@ -26,7 +25,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createServerComponentClient({ cookies });
+    const supabase = await createClient();
 
     // 사용자 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -151,7 +150,7 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('end_date');
     const limit = parseInt(searchParams.get('limit') || '10');
 
-    const supabase = createServerComponentClient({ cookies });
+    const supabase = await createClient();
 
     // 사용자 인증 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser();
