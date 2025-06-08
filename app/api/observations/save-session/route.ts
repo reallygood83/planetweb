@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { ObservationSession, StudentObservation } from '@/lib/types/observation-system';
+import { StudentObservation } from '@/lib/types/observation-system';
 
 export async function POST(request: NextRequest) {
   try {

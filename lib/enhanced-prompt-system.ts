@@ -51,7 +51,7 @@ export const SUBJECT_SPECIFIC_ELEMENTS = {
 };
 
 // 학생 응답 분석 및 해석 함수
-export function analyzeStudentResponse(responses: any, evaluationCriteria: any) {
+export function analyzeStudentResponse(responses: any, _evaluationCriteria: any) {
   const analysis = {
     achievementLevel: '',
     learningPattern: '',
@@ -77,7 +77,6 @@ export function analyzeStudentResponse(responses: any, evaluationCriteria: any) 
   // 주관식 응답 감정 분석 (간단한 키워드 기반)
   const saResponses = responses.shortAnswer || [];
   const motivationKeywords = ['재미있', '좋아', '열심히', '노력', '관심'];
-  const difficultyKeywords = ['어려', '힘들', '모르겠', '복잡'];
 
   analysis.motivationLevel = saResponses.some((r: string) => 
     motivationKeywords.some(k => r.includes(k))
@@ -107,7 +106,7 @@ export function createEvaluationContext(evaluationPlan: any) {
 // 성취기준별 가중치 계산
 function calculateStandardWeights(standards: string[]) {
   // 성취기준의 복잡도와 중요도를 기반으로 가중치 부여
-  return standards.map((standard, index) => ({
+  return standards.map((standard) => ({
     standard,
     weight: 1.0, // 기본값, 추후 AI 분석으로 개선
     complexity: analyzeComplexity(standard),
@@ -125,7 +124,7 @@ export function createEnhancedRecordPrompt(data: {
   teacherEvaluation?: any; // 교사 평가(성취수준) 추가
   additionalContext?: string;
 }) {
-  const { responseData, evaluation, responses, teacherObservation, teacherEvaluation, additionalContext } = data;
+  const { evaluation, responses, teacherObservation, teacherEvaluation } = data;
   
   // 교사 평가 데이터가 있으면 우선 사용, 없으면 학생 응답 분석
   let finalAchievementLevel: string;
@@ -147,8 +146,8 @@ export function createEnhancedRecordPrompt(data: {
     finalAchievementLevel = studentAnalysis.achievementLevel;
   }
   
-  // 평가계획 맥락 구성
-  const evalContext = createEvaluationContext(evaluation);
+  // 평가계획 맥락 구성 (향후 사용 예정)
+  // const evalContext = createEvaluationContext(evaluation);
   
   // 교과별 특화 요소 추출
   const subjectElements = SUBJECT_SPECIFIC_ELEMENTS[evaluation.subject] || SUBJECT_SPECIFIC_ELEMENTS['국어'];
@@ -249,7 +248,7 @@ function analyzeImportance(standard: string): number {
 }
 
 // 평가영역 분류 함수
-function categorizeEvaluationAreas(criteria: any) {
+function categorizeEvaluationAreas(_criteria: any) {
   // 평가기준을 영역별로 분류하고 중요도 부여
   return {
     knowledge: 0.3,    // 지식 이해

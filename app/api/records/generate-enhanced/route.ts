@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient } from '@/lib/supabase/server';
-import { createEnhancedRecordPrompt, analyzeStudentResponse } from '@/lib/enhanced-prompt-system';
+import { createEnhancedRecordPrompt } from '@/lib/enhanced-prompt-system';
 
 export async function POST(request: NextRequest) {
   try {

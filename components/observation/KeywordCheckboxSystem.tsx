@@ -9,11 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { 
   OBSERVATION_CATEGORIES, 
-  KEYWORD_COMBINATIONS, 
   INTENSITY_MODIFIERS 
 } from '@/lib/data/observation-keywords';
 import { 
-  ObservationCategory, 
   SelectedKeyword, 
   StudentObservation 
 } from '@/lib/types/observation-system';
@@ -143,7 +141,7 @@ export default function KeywordCheckboxSystem({
   // 선택 변경시 자동 텍스트 업데이트
   useEffect(() => {
     generateAutoText();
-  }, [selectedKeywords]);
+  }, [selectedKeywords, generateAutoText]);
 
   // 부모 컴포넌트에 변경 사항 전달
   useEffect(() => {

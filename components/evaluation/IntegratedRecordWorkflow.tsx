@@ -87,7 +87,7 @@ export default function IntegratedRecordWorkflow({
   // 초기 데이터 로드
   useEffect(() => {
     checkDataAvailability();
-  }, [studentName, evaluationPlanId]);
+  }, [studentName, evaluationPlanId, checkDataAvailability]);
 
   const checkDataAvailability = async () => {
     setIsLoading(true);
