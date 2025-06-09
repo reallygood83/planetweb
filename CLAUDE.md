@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-This is a Next.js 15 application using the App Router pattern for a Korean educational platform called "생기부 AI 도우미" (Student Record AI Helper) that helps teachers generate student evaluation records using AI.
+This is a Next.js 15 application using the App Router pattern for a Korean educational platform called "Planet" (생기부 AI 도우미 - Student Record AI Helper) that helps teachers generate student evaluation records using AI. The name "Planet" derives from combining the Korean words for behavioral development (행동발달) and academic records (성적), symbolizing a comprehensive educational ecosystem.
 
 ### Core Technology Stack
 - **Frontend**: Next.js 15, TypeScript, Tailwind CSS, Radix UI components
@@ -66,6 +66,12 @@ This is a Next.js 15 application using the App Router pattern for a Korean educa
 - Students submit self-assessments via class codes
 - Responses feed into AI content generation
 
+**Keyword-based Observation System**
+- Systematic teacher observation recording using predefined keywords
+- 6 categories: learning attitude, social skills, cognitive abilities, participation level, character traits, special talents
+- Real-time keyword selection for immediate record generation (memory-only, not persisted)
+- Observation data integrates with AI prompts for enhanced student record quality
+
 **Creative Activities System**
 - Teachers input semester activities in table format (order/date/activity name/area)
 - 4 activity areas: 자율활동, 동아리활동, 봉사활동, 진로활동
@@ -98,6 +104,7 @@ Core tables:
 - `surveys` + `survey_responses` - Student self-assessment system
 - `creative_activities` - Semester activity records by class
 - `creative_activity_records` - Generated creative experience records
+- `observation_sessions` + `daily_observations` - Keyword-based teacher observation data
 
 All tables use UUIDs and include Row Level Security policies.
 
@@ -140,8 +147,41 @@ Always handle both formats when processing student data.
 - Use `debug_school_code.sql` to troubleshoot school code issues
 - Migration files may conflict - check execution order in production
 
+### Record Generation System
+The application supports three main approaches to student record generation:
+1. **Simple Generation** (`/dashboard/generate-simple`): Single-page workflow with real-time keyword selection
+2. **Individual Generation** (`/dashboard/generate-record`): Multi-step guided process with comprehensive data collection
+3. **Batch Generation** (`/dashboard/generate-batch`): Class-wide generation with rate limiting
+
+Each approach integrates:
+- Evaluation plans with achievement standards and assessment criteria
+- Student self-assessment responses
+- Teacher observation records (keyword-based or free-text)
+- Real-time keyword selection (memory-only for immediate use)
+
+### Enhanced AI Prompt System
+The AI generation process uses sophisticated prompt engineering:
+- Multi-layered data integration (evaluation results + self-assessments + observations)
+- Positive reframing of assessment levels ("노력요함" → growth potential language)
+- NEIS compliance validation (character limits, formal tone, prohibited words)
+- Subject-specific formatting (single paragraph for 교과학습발달상황)
+
+### Observation System Architecture
+- `KeywordCheckboxSystem` component provides structured observation recording
+- Real-time selection creates synthetic observation records for immediate AI use
+- Persistent observation data stored in dedicated tables with category organization
+- Integration with generation APIs supports both approaches seamlessly
+
+### Branding and UI Consistency
+- "Planet" brand identity with gradient logo (P icon) represents educational ecosystem
+- Consistent header styling across main page and dashboard
+- Navigation dropdowns with proper positioning and click-outside behavior
+- SVG-based favicon system supporting multiple resolutions
+
 ### Common Troubleshooting
 - Student survey 404 errors: Check if school_code column exists and has data
 - RLS access issues: Student APIs should use service role key, teacher APIs use regular auth
 - API key errors: Verify encryption/decryption and localStorage persistence
 - Rate limiting: Implement proper delays for batch operations
+- Observation system: Real-time keyword data is memory-only and not persisted to database
+- Generation failures: Ensure either teacherNotes OR observation data is present

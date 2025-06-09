@@ -168,6 +168,27 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
+      {/* Class Registration Notice */}
+      {stats.classCount === 0 && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardHeader>
+            <CardTitle className="text-blue-900">학급 등록이 필요합니다</CardTitle>
+            <CardDescription className="text-blue-700">
+              Planet의 모든 기능을 활용하려면 먼저 학급을 등록해주세요. 
+              학급 등록 후 학생 명단을 추가하고 다양한 평가 기능을 사용할 수 있습니다.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={() => window.location.href = '/dashboard/class'}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              학급 등록하기
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
@@ -187,6 +208,15 @@ export default function DashboardPage() {
           <CardContent>
             <p className="text-3xl font-bold">{stats.classCount}</p>
             <p className="text-sm text-gray-500">관리중인 학급</p>
+            {stats.classCount === 0 && (
+              <Button 
+                size="sm" 
+                className="mt-2 w-full"
+                onClick={() => window.location.href = '/dashboard/class'}
+              >
+                학급 추가
+              </Button>
+            )}
           </CardContent>
         </Card>
         
@@ -231,6 +261,16 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-600">
                   담당 학급과 학생들을 등록하고 기본 정보를 설정하세요.
                 </p>
+                {stats.classCount === 0 && (
+                  <Button 
+                    size="sm" 
+                    variant="link" 
+                    className="mt-1 p-0 h-auto text-blue-600"
+                    onClick={() => window.location.href = '/dashboard/class'}
+                  >
+                    → 지금 학급 등록하기
+                  </Button>
+                )}
               </div>
             </li>
             <li className="flex space-x-3">

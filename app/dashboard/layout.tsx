@@ -55,6 +55,7 @@ export default function DashboardLayout({
   }
 
   const navigation: NavItem[] = [
+    { name: '학급관리', href: '/dashboard/class' },
     { name: '대시보드', href: '/dashboard' },
     {
       name: '평가관리',
@@ -63,7 +64,6 @@ export default function DashboardLayout({
         { name: '평가결과입력', href: '/dashboard/evaluation-results' },
         { name: '교사평가(성취수준)', href: '/dashboard/teacher-evaluation' },
         { name: '관찰기록', href: '/dashboard/observation-records' },
-        { name: '학급관리', href: '/dashboard/class' },
         { name: '학교코드', href: '/dashboard/school-code' },
       ]
     },
