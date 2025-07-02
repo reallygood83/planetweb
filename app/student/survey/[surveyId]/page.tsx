@@ -93,7 +93,18 @@ function TakeSurveyContent() {
 
   const fetchSurvey = async () => {
     try {
-      const response = await fetch(`/api/surveys/${params.surveyId}`)
+      const classCode = searchParams?.get('classCode')
+      const shareCode = searchParams?.get('share')
+      
+      // 학생용 API 엔드포인트 사용
+      let apiUrl = `/api/student/survey/${params.surveyId}`
+      if (classCode) {
+        apiUrl += `?classCode=${classCode}`
+      } else if (shareCode) {
+        apiUrl += `?share=${shareCode}`
+      }
+      
+      const response = await fetch(apiUrl)
       if (!response.ok) {
         throw new Error('Failed to fetch survey')
       }
@@ -185,6 +196,8 @@ function TakeSurveyContent() {
 
     setIsSubmitting(true)
     try {
+      const shareCode = searchParams?.get('share')
+      
       const response = await fetch('/api/student/responses', {
         method: 'POST',
         headers: {
@@ -193,7 +206,7 @@ function TakeSurveyContent() {
         body: JSON.stringify({
           surveyId: survey.id,
           studentName: studentInfo.studentName,
-          classCode: studentInfo.classCode,
+          classCode: shareCode || studentInfo.classCode,
           responses: responses
         })
       })
@@ -204,7 +217,8 @@ function TakeSurveyContent() {
       }
 
       // Success! Navigate to completion page
-      router.push(`/student/complete?code=${studentInfo.classCode}`)
+      const completionCode = shareCode || studentInfo.classCode
+      router.push(`/student/complete?code=${completionCode}`)
     } catch (error) {
       console.error('Error submitting response:', error)
       alert('응답 제출 중 오류가 발생했습니다: ' + (error as Error).message)
